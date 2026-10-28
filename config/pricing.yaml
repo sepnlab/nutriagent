@@ -1,0 +1,168 @@
+# 模型定价表（$ / 1M tokens）
+#
+# 价格来自各平台公开定价，按 input / output 分别计价
+# 未知价格的模型标记为 0（统计用量但不计费）
+#
+# Key 格式：{provider}::{model_id}，支持按供应商区分同一模型的不同定价
+# 查找时支持回退：若 {provider}::{model_id} 未找到，降级到 bare {model_id}
+
+models:
+  # ── DeepSeek 官方 API ──────────────────────────────────
+  deepseek::deepseek-v4-flash:
+    input: 0.14
+    output: 0.28
+  deepseek::deepseek-v4-pro:
+    input: 0.435
+    output: 0.87
+
+  # ── SiliconFlow ─────────────────────────────────────────
+  siliconflow::deepseek-ai/DeepSeek-V4-Flash:
+    input: 0.14
+    output: 0.28
+  siliconflow::deepseek-ai/DeepSeek-V3:
+    input: 0.27
+    output: 1.10
+  siliconflow::deepseek-ai/DeepSeek-V3.2:
+    input: 0.27
+    output: 1.10
+  siliconflow::Qwen/Qwen3.5-9B:
+    input: 0.15
+    output: 0.15
+  siliconflow::Qwen/Qwen3.5-27B:
+    input: 0.082
+    output: 0.66
+  siliconflow::Qwen/Qwen3.6-27B:
+    input: 0.15
+    output: 0.60
+  siliconflow::zai-org/GLM-4.5-Air:
+    input: 0.14
+    output: 0.86
+  siliconflow::MiniMaxAI/MiniMax-M2.5:
+    input: 0.30
+    output: 1.20
+  siliconflow::Qwen/Qwen3.6-35B-A3B:
+    input: 0.10
+    output: 0.40
+  siliconflow::inclusionAI/Ling-flash-2.0:
+    input: 0.14
+    output: 0.57
+  siliconflow::tencent/Hunyuan-A13B-Instruct:
+    input: 0.14
+    output: 0.57
+
+  # ── 阿里云 DashScope ────────────────────────────────────
+  aliyun::qwen3-8b:
+    input: 0.10
+    output: 0.40
+  aliyun::qwen3-32b:
+    input: 0.10
+    output: 0.40
+  aliyun::qwen3.6-plus:
+    input: 0.15
+    output: 0.60
+  aliyun::qwen3.5-flash:
+    input: 0.10
+    output: 0.40
+  aliyun::qwen3.6-flash:
+    input: 0.10
+    output: 0.40
+  aliyun::qwen3.5-35b-a3b:
+    input: 0.10
+    output: 0.40
+  aliyun::qwen-plus-2025-07-28:
+    input: 0.15
+    output: 0.60
+  aliyun::glm-4.5-air:
+    input: 0.14
+    output: 0.86
+  aliyun::glm-5:
+    input: 0.20
+    output: 1.00
+  aliyun::kimi-k2.5:
+    input: 0.20
+    output: 0.80
+  aliyun::kimi-k2.6:
+    input: 0.20
+    output: 0.80
+
+  # ── 火山引擎（豆包）─────────────────────────────────────
+  volcano::doubao-seed-2-0-lite-260215:
+    input: 0.08
+    output: 0.08
+  volcano::doubao-seed-2-0-pro-260215:
+    input: 0.15
+    output: 0.15
+  volcano::doubao-seed-2-0-mini-260428:
+    input: 0.06
+    output: 0.06
+  volcano::doubao-seed-2-0-lite-260428:
+    input: 0.08
+    output: 0.08
+  volcano::doubao-seed-1-6-251015:
+    input: 0.08
+    output: 0.08
+  volcano::doubao-seed-1-6-flash-250828:
+    input: 0.05
+    output: 0.05
+  volcano::deepseek-v3-2-251201:
+    input: 0.27
+    output: 1.10
+  volcano::deepseek-r1-250120:
+    input: 0.55
+    output: 2.19
+
+  # ── 腾讯混元 ────────────────────────────────────────────
+  tencent::hy-mt2-pro:
+    input: 0.14
+    output: 0.57
+  tencent::hy3-preview:
+    input: 0.14
+    output: 0.57
+  tencent::hunyuan-2.0-instruct-20251111:
+    input: 0.14
+    output: 0.57
+  tencent::hunyuan-2.0-thinking-20251109:
+    input: 0.14
+    output: 0.57
+  tencent::minimax-m2.5:
+    input: 0.15
+    output: 0.15
+  tencent::glm-5:
+    input: 0.20
+    output: 1.00
+
+  # ── 千问AI平台（人民币计价，按 7.2 CNY/USD 换算；2026-10-20）──
+  # 原始单价（元/百万 token）：qwen3.8-flash 0.8/2.7；qwen3.8-27b 3/12；
+  # qwen3.8-max 12/36。换算汇率 7.2 需在成本表脚注中注明。
+  qianwen::qwen3.8-flash:
+    input: 0.111
+    output: 0.375
+  qianwen::qwen3.8-27b:
+    input: 0.417
+    output: 1.667
+  qianwen::qwen3.8-max:
+    input: 1.667
+    output: 5.0
+
+  # ── OpenRouter 聚合模型（国外模型）─────────────────────
+  openrouter::openai/gpt-4o:
+    input: 2.50
+    output: 10.00
+  openrouter::openai/gpt-4o-mini:
+    input: 0.15
+    output: 0.60
+  openrouter::google/gemini-2.0-flash-001:
+    input: 0.10
+    output: 0.40
+  openrouter::google/gemini-2.5-pro-exp-03-25:
+    input: 1.25
+    output: 10.00
+  openrouter::anthropic/claude-sonnet-4-20250514:
+    input: 3.00
+    output: 15.00
+  openrouter::meta-llama/llama-3.3-70b-instruct:
+    input: 0.59
+    output: 0.79
+  openrouter::deepseek/deepseek-chat:
+    input: 0.14
+    output: 0.28

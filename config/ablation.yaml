@@ -1,0 +1,190 @@
+# NutriCHAT 消融实验配置
+#
+# 此配置对应 `src/evaluation/ablation.py` 的实现。
+# 聚焦 Multi-Agent 架构（Router → Specialists → Synthesis），
+# 7 个维度消融：
+#   Dimension 1: Agent 架构 — Single ReAct vs Multi-Agent
+#   Dimension 2: Specialist 边际贡献 — 逐个移除 specialist
+#   Dimension 3: Router 策略 — LLM vs Keyword vs Broadcast
+#   Dimension 4: RAG 贡献 — Multi-Agent with RAG vs without RAG
+#   Dimension 5: Synthesis 策略 — 有/无合成层
+#   Dimension 6: 基座 LLM 消融 — 同架构不同底座
+#   Dimension 7: 跨语言 — 中英文查询对比
+
+# ── 评分组件开关 ──
+# 消融实验关注架构差异趋势，SelfCheck 可通过 config.local.yaml 按需开启
+scoring:
+  evaluator_llm: true          # EvaluatorLLM（correctness / precision / depth）
+  selfcheck: false             # SelfCheckGPT-NLI（默认关闭，config.local.yaml 可开启）
+  hallucination_ratio: 1.0     # SelfCheck 采样比例（selfcheck=true 时生效）
+  flesch: true                 # Flesch Reading Ease 可读性
+  tolerance: false             # 容差精度（消融不关注数值精度，关闭）
+
+# ── Dimension 1: Agent 架构消融 ──
+#   Single ReAct → Multi-Agent (no tools) → Multi-Agent (single-pass) → Multi-Agent (full)
+# 旧配置里的 "Multi-Agent (no ReAct)" 从未真正执行（dispatch 大小写 bug），
+# 现仅作为 legacy alias 映射到 single-pass；新配置必须使用下列规范名。
+architecture:
+  enabled: true
+  meta:
+    title: "Agent 架构消融"
+    subtitle: "Single ReAct vs Multi-Agent (no tools / single-pass / full)"
+    note: "Single ReAct → Multi-Agent no tools (parametric specialists) → Multi-Agent single-pass (one tool call per specialist) → Multi-Agent full (iterative ReAct). The single-pass vs full gap isolates iterative reasoning."
+  variants:
+    - name: "Single ReAct"
+      description: "单 ReAct Agent + 全部 4 工具（单智能体架构基线）"
+    - name: "Multi-Agent (no tools)"
+      description: "Router → 4 Specialists（无工具，纯参数化）→ Synthesis，测路由+合成的边际贡献"
+    - name: "Multi-Agent (single-pass tool call)"
+      description: "Router → 4 Specialists（每个专家一次工具调用，无迭代）→ Synthesis，测迭代推理的边际价值"
+    - name: "Multi-Agent (full)"
+      description: "Router → 4 Specialists（带工具 ReAct）→ Synthesis"
+
+# ── E1: 架构析因（数据/工具/RAG/额外调用/分解/校验）──
+architecture_factorial:
+  enabled: true
+  meta:
+    title: "E1 架构析因"
+    subtitle: "Standalone → Single ReAct+RAG → Single+RAG+synthesis → Multi-Agent (validation off/on)"
+    note: "Separates data/tool access, RAG, the extra synthesis call, decomposition, and consistency checking. One grid, same backbone and output budget."
+  variants:
+    - name: "Standalone LLM"
+      description: "纯 LLM，无工具 / 无 RAG / 无 agent"
+    - name: "Single ReAct + tools"
+      description: "单 ReAct + 4 工具（无 RAG）"
+    - name: "Single ReAct + tools + RAG"
+      description: "单 ReAct + 4 工具 + RAG 上下文"
+    - name: "Single ReAct + tools + RAG + synthesis"
+      description: "单 ReAct + RAG + 一次 synthesis 重写（无分解）"
+    - name: "Multi-Agent (validation off)"
+      description: "多智能体 + 合成，但关闭一致性校验"
+    - name: "Multi-Agent (validation on)"
+      description: "多智能体 + 合成 + 一致性校验（full multi-agent system）"
+
+# ── E2: 合成析因（整合 vs 校验 vs 额外调用）──
+synthesis_factorial:
+  enabled: true
+  meta:
+    title: "E2 合成析因"
+    subtitle: "拼接 / 校验+拼接 / 合成(无校验/乱序/正确) / 仅查询合成"
+    note: "Separates integration, deterministic validation, and the extra LLM call; replaces the original D5 comparison."
+  variants:
+    - name: "Concatenation"
+      description: "直接拼接 specialist 输出（无校验、无合成）"
+    - name: "Validation + concatenation"
+      description: "确定性校验 + 拼接（无合成 LLM 调用）"
+    - name: "Synthesis (validation off)"
+      description: "合成 LLM，但不注入校验警告"
+    - name: "Synthesis (shuffled warnings)"
+      description: "合成 LLM + 同内容但乱序的校验警告"
+    - name: "Synthesis (correct warnings)"
+      description: "合成 LLM + 正确校验警告（full multi-agent system）"
+    - name: "Query-only synthesis"
+      description: "仅把 query 交给合成 LLM（额外调用对照）"
+
+# ── Dimension 2: Synthesis 策略消融 ──
+# Synthesis 层的边际贡献：交叉验证 + 合并 vs 直接拼接
+synthesis:
+  enabled: true
+  meta:
+    title: "Synthesis 策略消融"
+    subtitle: "有 Synthesis 层 vs 直接拼接 Specialist 输出"
+    note: "Synthesis aggregates and cross-validates; without it, specialist outputs are concatenated"
+  variants:
+    - name: "With Synthesis"
+      synthesis_enabled: true
+      description: "完整 Synthesis 层（默认）"
+    - name: "Without Synthesis"
+      synthesis_enabled: false
+      description: "直接拼接 Specialist 输出"
+
+# ── Dimension 3: Specialist 消融 ──
+# 逐个移除一个 specialist，观察性能下降幅度
+specialist:
+  enabled: true
+  meta:
+    title: "Specialist 消融"
+    subtitle: "逐个移除 specialist，观察性能下降幅度"
+    note: "↓ drop from Full = each specialist's marginal contribution"
+  variants:
+    - name: "Full (4 Specialists)"
+      description: "所有 4 个 specialist 全部参与"
+    - name: "Without Feed"
+      exclude: feed
+    - name: "Without Nutrition"
+      exclude: nutrition
+    - name: "Without Performance"
+      exclude: performance
+    - name: "Without Definitions"
+      exclude: definitions
+
+# ── Dimension 4: Router 策略消融 ──
+# 对比不同路由策略对性能的影响
+router:
+  enabled: true
+  meta:
+    title: "Router 策略消融"
+    subtitle: "LLM Router vs Keyword Fallback vs Broadcast（全调）"
+    note: "Broadcast = 4 specialists all invoked; compares routing precision vs cost"
+  variants:
+    - name: "LLM Router"
+      strategy: llm
+      description: "LLM 分类路由（当前默认）"
+    - name: "Keyword Router"
+      strategy: keyword
+      description: "关键词 fallback 路由"
+    - name: "Broadcast (All)"
+      strategy: broadcast
+      description: "全调 4 个 specialist（不路由）"
+
+# ── Dimension 5: RAG 消融（Multi-Agent 上下文） ──
+# 测试 RAG 在多智能体架构中的补充价值
+rag:
+  enabled: true
+  meta:
+    title: "RAG 消融（Multi-Agent 上下文）"
+    subtitle: "Multi-Agent with RAG vs without RAG"
+    note: "RAG's contribution in multi-agent: still complements specialist knowledge?"
+  variants:
+    - name: "Multi-Agent + RAG"
+      rag_enabled: true
+      description: "完整 Multi-Agent + RAG 域过滤"
+    - name: "Multi-Agent (no RAG)"
+      rag_enabled: false
+      description: "Multi-Agent 无 RAG"
+
+# ── Dimension 6: LLM Backbone 消融 ──
+# 同一 Multi-Agent 架构在不同基座 LLM 上的表现
+llm_backbone:
+  enabled: true
+  meta:
+    title: "基座 LLM 消融"
+    subtitle: "Multi-Agent 架构在不同 LLM 底座上的表现"
+    note: "Same Multi-Agent architecture, different backbone LLMs"
+  variants:
+    - name: "Qwen3.5-27B"
+      model: Qwen/Qwen3.5-27B
+      description: "通义千问 3.5 270亿参数"
+    - name: "DeepSeek-V4-Flash"
+      model: deepseek-ai/DeepSeek-V4-Flash
+      description: "DeepSeek V4 Flash"
+    # 使用 model_ref 引用 models.yaml 的基线（自动解析 provider/base_url/api_key）：
+    # - name: "Aliyun Qwen3.6-Plus (ref)"
+    #   model_ref: "aliyun/Qwen3.6-Plus"
+    #   description: "通过 model_ref 走阿里云 API"
+
+# ── Dimension 7: 跨语言（中英文对比）消融 ──
+# 同一 Multi-Agent 架构在英文和中文查询上的表现差异
+language:
+  enabled: true
+  meta:
+    title: "跨语言消融"
+    subtitle: "英文 vs 中文查询表现对比"
+    note: "Same Multi-Agent architecture, different query languages"
+  variants:
+    - name: "English"
+      query_set: "western"
+      description: "英文查询（非 CN- 前缀）"
+    - name: "Chinese"
+      query_set: "chinese"
+      description: "中文查询（CN- 前缀）"

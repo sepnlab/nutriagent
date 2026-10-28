@@ -1,0 +1,19 @@
+# local environment and secrets
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.cache/
+
+# private/runtime data (not part of this release)
+corpus/
+models/
+logs/
+docs/
+*.xlsx
+*.xls
+*.docx
+*.pdf
+*.zip
+*.log

@@ -1,0 +1,80 @@
+# NutriCHAT 运行时设置
+#
+# API key 仍在 .env 中管理（不入库）
+# 其余配置集中在此文件和 config/ 下各 YAML 中
+
+# ---- 品种 ----
+# broiler（肉鸡）或 layer（蛋鸡）
+species: layer
+
+# ---- 响应生成 ----
+# 最大 token 数（原 NutriCHAT 单 Agent 用 200，Multi-Agent Synthesis 需要更多空间）
+max_tokens: 512
+# Specialist 中间输出 token 上限（仅检索工具数据，不需要长篇回答）
+specialist_max_tokens: 256
+# SelfCheckGPT 采样 token 上限（NLI 仅检测事实是否存在，不需要完整回答）
+selfcheck_max_tokens: 200
+
+# ---- 检索设置 ----
+retrieval:
+  # RAG 检索返回的最近邻文档数
+  #   >1: 多文档检索，可提供更丰富上下文（配合重排序更佳）
+  k: 1
+
+# ---- API 调用设置 ----
+api:
+  # LLM API 超时（秒）
+  #   60+:  网络不稳定或使用境外 API 时
+  timeout: 30
+
+  # 最大并发请求数（受 _RateLimiter 控制，建议不超过 6）
+  max_concurrent: 6
+
+  # 自动重试设置
+  retry:
+    # 最大重试次数
+    #   3: 默认，适应多数 API 临时故障
+    #   5+: API 频繁限流时
+    max_attempts: 3
+
+    # 指数退避初始等待（秒）
+    #   1: 快速重试
+    min_wait: 2
+
+    # 指数退避最大等待（秒）
+    #   30:  默认，避免长时间挂起
+    #   120+: 允许更激进的重试
+    max_wait: 30
+
+  # 基线模型调用时的额外超时（二次确认，paper 评测环境特有）
+  # 留空则沿用 api.timeout
+  baseline_timeout:
+
+# ---- Agent 设置 ----
+agent:
+  # Router LLM 参数
+  router:
+    temperature: 0.0
+    max_tokens: 200
+
+  # Synthesis LLM 参数（默认使用 Config.MAX_TOKENS，无需额外设置）
+  synthesis:
+    temperature: 0.0
+
+  # ReAct Agent 参数
+  max_iterations: 7
+  early_stopping: true
+
+# ---- 评估设置（evaluate.yaml 可覆盖） ----
+evaluation:
+  # SelfCheckGPT 按比例跳过部分查询（0=跳过, 1.0=全部）
+  # 默认值在 evaluate.yaml 中定义，此处仅作 fallback
+  hallucination_ratio: 1.0
+  # 分层采样（null=全量，0.0-1.0=按比例，>=1=每类固定 N 条）
+  sample_ratio: null
+
+# ---- 基线模型设置 ----
+baselines:
+  # 思考模型（thinking_baselines）的默认 max_tokens
+  # 思考过程会消耗额外 token，默认值比普通模型大
+  thinking_max_tokens: 4096

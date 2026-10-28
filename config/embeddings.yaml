@@ -1,0 +1,26 @@
+# NutriCHAT 词嵌入 + NLI 模型配置
+#
+# provider: local（默认）或 siliconflow
+provider: local
+
+# 本地模型设置（provider: local 时生效）
+local:
+  model_path: ./models/Qwen3-Embedding-0.6B
+  device: cuda
+
+  # NLI 模型（SelfCheckGPT 使用的跨编码器）
+  # model_path: 本地路径，或 HuggingFace 模型名
+  # device: 默认继承 embedding 的 device，可单独设置
+  nli:
+    model_path: ./models/mdeberta-v3-mnli-xnli
+    device: cuda
+
+# SiliconFlow API 设置（provider: siliconflow 时生效）
+# API key 复用 .env 中的 SILICONFLOW_API_KEY
+siliconflow:
+  default_model: Qwen/Qwen3-Embedding-8B
+  # 可选模型（用 default_model 切换）：
+  # - Qwen/Qwen3-Embedding-8B:   最高质量，8B 参数，1024 维
+  # - Qwen/Qwen3-Embedding-4B:   平衡方案，4B 参数，1024 维
+  # - Qwen/Qwen3-Embedding-0.6B: 轻量级（与本地模型同规格）
+  # - netease-youdao/bce-embedding-base_v1: 网易有道 BCE 嵌入，768 维

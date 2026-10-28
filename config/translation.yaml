@@ -1,0 +1,24 @@
+# NutriCHAT 响应翻译配置（export_responses.py --lang zh --api）
+#
+# CLI 参数 --api-model 优先级高于此文件。
+# 所有字段均为可选，不设置则使用以下默认值。
+
+# ── 翻译模型 ────────────────────────────────────────────────
+# 在线翻译用的模型（默认 Qwen3.5-9B，便宜够用）
+api_model: "Qwen/Qwen3.5-9B"
+
+# ── API 连接 ────────────────────────────────────────────────
+# API 地址（留空则复用 nutrichat 的 provider 连接）
+# 设此值可让翻译使用独立的 API 供应商
+# base_url: "https://api.siliconflow.cn/v1"
+
+# API key 的环境变量名（留空则复用 nutrichat 的 provider api_key_env）
+# 设此值可让翻译使用独立的 API key
+# api_key_env: "SILICONFLOW_API_KEY"
+
+# ── 请求控制 ────────────────────────────────────────────────
+# 每条翻译请求的超时秒数
+# timeout: 30
+
+# 并发的翻译请求数（过大可能触发 API 限流）
+# concurrency: 4

@@ -1,0 +1,48 @@
+# NutriAgent 评估配置
+#
+# 用于 --evaluate 和 --compare 命令，CLI 参数可覆盖此文件中的值。
+#
+#   python main.py --evaluate              # 仅 NutriAgent
+#   python main.py --compare               # NutriAgent + 基线对比
+#   python main.py --compare --baselines-only  # 仅基线
+#   python main.py --evaluate --quick      # 开发模式：3% 采样 + 跳过 SelfCheck
+
+# ---- 评估参数（全局默认）----
+evaluation:
+  # SelfCheckGPT 报告的 N 值列表（N=5 已验证与 N=20 差异极小）
+  n_selfcheck_values: [5]
+
+  # SelfCheckGPT 实际生成的样本数（留空则自动取 max(n_selfcheck_values)）
+  n_selfcheck_gen_samples:
+
+  # 分层采样（null=全量，0.0-1.0=按比例，>=1=每类固定 N 条）
+  sample_ratio: null
+
+# ---- Agent 架构 ----
+# multi:  多智能体系统（Router → Specialists → Synthesis）
+# both:   single 与 multi 对比
+agent_mode: multi
+
+# ---- 查询集 ----
+# all:     全部查询
+# chinese: 仅中文查询（id 以 CN- 开头）
+# western: 仅英文查询
+query_set: all
+
+# ---- 基线模型（仅 --compare 时生效）----
+# 留空 = 使用全部基线模型（config/models.yaml baselines.models）。
+# 本地过滤请编辑 config/config.local.yaml 的 baselines 段。
+baselines: null
+
+# ---- 详细分组分析 ----
+# 额外打印按查询类型和工具类别的分组表
+breakdown: true
+
+# ---- 评分组件开关 ----
+scoring:
+  evaluator_llm: true          # LLM 自动评分（correctness / precision / depth）
+  selfcheck: true              # SelfCheckGPT-NLI 幻觉检测（--quick 自动跳过）
+  n_selfcheck_values: null     # SelfCheck 样本量（null=继承 evaluation.n_selfcheck_values）
+  tolerance: true              # 容差精度（±2% / ±5%）
+  flesch: true                 # Flesch Reading Ease 可读性
+  shuffle_responses: false     # 评估时随机打乱 response 顺序，减轻位置偏差
