@@ -1,62 +1,62 @@
 # ═══════════════════════════════════════════════════════════════
-# NutriAgent — 本地实验覆盖配置
+# NutriAgent — local experiment override configuration
 # ═══════════════════════════════════════════════════════════════
 #
-# deep-merge 到 evaluate.yaml 和 models.yaml 之上。
-# 纳入版本控制，统一管理实验参数。
+# deep-merged on top of evaluate.yaml and models.yaml.
+# Kept under version control so experiment parameters are managed centrally.
 #
-# 三种实验模式各有独立的 scoring 段，按需覆盖：
-#   scoring_evaluate → 仅 --evaluate 生效
-#   scoring_compare  → 仅 --compare 生效
-#   scoring_ablation → 仅 --ablation 生效
-#   scoring          → 以上三种均生效（默认值）
+# The three experiment modes each have their own scoring section, applied on demand:
+#   scoring_evaluate → applies only to --evaluate
+#   scoring_compare  → applies only to --compare
+#   scoring_ablation → applies only to --ablation
+#   scoring          → applies to all three (default values)
 # ═══════════════════════════════════════════════════════════════
 
-# ── 基座模型 ─────────────────────────────────────────────────
-# 注意 key 名必须与 models.yaml 中的 nutrichat: 对应
+# ── Backbone model ───────────────────────────────────────────
+# Note: key names must match nutrichat: in models.yaml
 nutrichat:
   model: deepseek-ai/DeepSeek-V4-Flash
   provider: siliconflow
 
-# ── EvaluatorLLM 评分模型 ──────────────────────────────────────
+# ── EvaluatorLLM scoring model ────────────────────────────────
 evaluator:
   model: mimo-v2.5-pro
   provider: xiaomi
 
-# ── 评估采样 ─────────────────────────────────────────────────
+# ── Evaluation sampling ──────────────────────────────────────
 # Use the curated 54-query file, or --quick for a 3% sample.
 evaluation:
-  sample_ratio: null          # null=不采样，配合 --query-file 使用全部 54 条
+  sample_ratio: null          # null=no sampling; with --query-file all 54 queries are used
 
-# ── 对比基线 ─────────────────────────────────────────────────
-# 少而精路线：弱/中/强三档 + 基座对照，覆盖 capability 谱系
+# ── Comparison baselines ─────────────────────────────────────
+# Few-but-strong approach: weak/mid/strong tiers + backbone control, spanning the capability spectrum
 baselines:
-  - siliconflow/DeepSeek-V4-Flash       # 基座对照（同模型无架构，量化架构价值）
-  - siliconflow/Qwen3-8B                # 弱档（8B 小模型）
-  - qianwen/Qwen3.8-Flash               # 弱-中档
-  - siliconflow/GLM-4.5-Air             # 中档（智谱，跨厂商泛化验证）
-  - tencent/MiniMax-M2.5                # 中档
-  - deepseek/DeepSeek-V4-Pro            # 强档（旗舰级）
+  - siliconflow/DeepSeek-V4-Flash       # backbone control (same model without architecture, quantifies architecture value)
+  - siliconflow/Qwen3-8B                # weak tier (8B small model)
+  - qianwen/Qwen3.8-Flash               # weak-mid tier
+  - siliconflow/GLM-4.5-Air             # mid tier (Zhipu; cross-vendor generalization check)
+  - tencent/MiniMax-M2.5                # mid tier
+  - deepseek/DeepSeek-V4-Pro            # strong tier (flagship)
 
-# ── 其他参数 ─────────────────────────────────────────────────
+# ── Other parameters ─────────────────────────────────────────
 species: layer
 agent_mode: multi
 breakdown: true
 max_tokens: 512
 api:
   timeout: 30
-  max_concurrent: 4  # DeepSeek 官方 TPM 限制较宽松
+  max_concurrent: 4  # DeepSeek official TPM limits are relatively generous
 retrieval:
   k: 1
 
-# ── 思考模式白名单 ──────────────────────────────────────────
+# ── Thinking-mode whitelist ──────────────────────────────────
 thinking_baselines: null
 
-# ── 消融实验配置 ──────────────────────────────────────────
-# dimensions: 控制跑哪些消融维度（null=全部，list=指定维度）
-# 可选值: architecture, synthesis, specialist, router, rag, llm_backbone, language
+# ── Ablation experiment configuration ────────────────────────
+# dimensions: controls which ablation dimensions to run (null=all, list=selected dimensions)
+# Allowed values: architecture, synthesis, specialist, router, rag, llm_backbone, language
 ablation:
-  dimensions:                    # null=全部；指定列表=只跑这些维度
+  dimensions:                    # null=all; an explicit list=only these dimensions
     - architecture
     - architecture_factorial
     - synthesis_factorial
@@ -66,18 +66,18 @@ ablation:
     - specialist
     - llm_backbone
     - language
-  llm_backbone:                    # 覆盖 ablation.yaml 默认，弱/中/强三档 + 基座对照
-    - siliconflow/Qwen3-8B         # 弱档（8B 小模型）
-    - qianwen/Qwen3.8-Flash        # 弱-中档（替代 Qwen3.5-Flash）
-    - siliconflow/DeepSeek-V4-Flash  # 基座对照（NutriAgent 默认基座）
-    - qianwen/Qwen3.8-27B          # 中-强档（替代 Qwen3.6-Plus）
-    - deepseek/DeepSeek-V4-Pro     # 强档（旗舰级）
+  llm_backbone:                    # overrides the ablation.yaml default: weak/mid/strong tiers + backbone control
+    - siliconflow/Qwen3-8B         # weak tier (8B small model)
+    - qianwen/Qwen3.8-Flash        # weak-mid tier (replaces Qwen3.5-Flash)
+    - siliconflow/DeepSeek-V4-Flash  # backbone control (NutriAgent default backbone)
+    - qianwen/Qwen3.8-27B          # mid-strong tier (replaces Qwen3.6-Plus)
+    - deepseek/DeepSeek-V4-Pro     # strong tier (flagship)
 
 # ──────────────────────────────────────────────────────────────
-# 评分组件开关（按实验模式）
+# Scoring component switches (by experiment mode)
 # ──────────────────────────────────────────────────────────────
 
-# --evaluate 评分：全量评估
+# --evaluate scoring: full evaluation
 scoring_evaluate:
   evaluator_llm: true
   selfcheck: true
@@ -87,29 +87,29 @@ scoring_evaluate:
   flesch: true
   quick:
     sample_ratio: 0.1
-    selfcheck: false               # --quick 关闭，省 token
+    selfcheck: false               # off for --quick to save tokens
     hallucination_ratio: 1.0
 
 scoring_compare:
   evaluator_llm: true
   selfcheck: true
   hallucination_ratio: 1.0
-  n_selfcheck_values: [5]          # 与 evaluate 一致
-  tolerance: true                  # 客观数值精度，必开
+  n_selfcheck_values: [5]          # same as evaluate
+  tolerance: true                  # objective numeric precision, always on
   flesch: true
   quick:
     sample_ratio: 0.1
-    selfcheck: false               # --quick 关闭，省 token
+    selfcheck: false               # off for --quick to save tokens
     hallucination_ratio: 1.0
 
 scoring_ablation:
   evaluator_llm: true
   selfcheck: true
-  hallucination_ratio: 0.0                 # 0=跳过 SelfCheck 快速出报告
+  hallucination_ratio: 0.0                 # 0=skip SelfCheck for a fast report
   n_selfcheck_values: [5]
   tolerance: true
   flesch: false
   quick:
     sample_ratio: 0.1
-    selfcheck: false               # --quick 关闭，省 token
+    selfcheck: false               # off for --quick to save tokens
     hallucination_ratio: 1.0

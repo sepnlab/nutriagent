@@ -6,13 +6,13 @@ from src.species.base import SpeciesHandler
 class LayerHandler(SpeciesHandler):
     key = "layer"
 
-    # ── 元数据 ──────────────────────────────────────────────
+    # ── Metadata ────────────────────────────────────────────
     display_name = "Layer (egg-type chicken)"
     breeds = "Hy-Line W-36, Hy-Line Brown, Hy-Line Pink, ISA Brown, Lohmann LSL-Classic, Lohmann Pink, Lohmann Grey, Hisex Brown, Dawu Jinfeng, Dawu He, Dawu Fen 1, Nongda 3, Nongda 6, Beinong 1, Beinong 2, Jinghong 1 v3.0, Jingbai 939, Jingfen 1, Jingfen 2, Jingfen 6"
     phases = "Starter → Grower → Developer → Pre-Lay → Lay I → Lay II → Lay III"
     metrics = "Hen-day production, egg weight, egg mass, feed/dozen, feed/kg egg, body weight, shell quality, mortality"
 
-    # ── 性能管理 ────────────────────────────────────────────
+    # ── Performance management ──────────────────────────────
     performance_breed_column = "Breed"
     performance_age_column = "Week"
     performance_age_field = "week"
@@ -51,7 +51,7 @@ class LayerHandler(SpeciesHandler):
             "Age: weeks (0-100). Input: breed, week (optional), parameter (optional)."
         )
 
-    # ── 营养需要量 ────────────────────────────────────────────
+    # ── Nutrient requirements ───────────────────────────────
     nutrient_breed_column = "Breed"
     nutrient_breed_label = "Layer breeds"
     nutrient_available_breeds = "Hy-Line W-36, Hy-Line Brown, Hy-Line Pink, ISA Brown, Lohmann LSL-Classic, Lohmann Pink, Lohmann Grey, Hisex Brown, Dawu Jinfeng, Dawu He, Dawu Fen 1, Nongda 3, Nongda 6, Beinong 1, Beinong 2, Jinghong 1 v3.0, Jingbai 939, Jingfen 1, Jingfen 2, Jingfen 6"

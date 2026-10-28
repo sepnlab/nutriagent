@@ -1,14 +1,14 @@
-"""Ablation → Compare 端到端管道。
+"""Ablation → Compare end-to-end pipeline.
 
-流程:
-  Phase 1: --ablation（完整消融，决策维 30% 采样，不开 SelfCheck）
-  Phase 2: 解析结果 → 自动选配最优参数
-  Phase 3: --compare（全量查询 + SelfCheck + 基线对比）
+Pipeline:
+  Phase 1: --ablation (full ablation, 30% sampling on decision dimensions, SelfCheck off)
+  Phase 2: parse results → automatically select the best configuration
+  Phase 3: --compare (all queries + SelfCheck + baseline comparison)
 
-用法:
+Usage:
   python main.py --ablation-to-compare
-  python main.py --ablation-to-compare --skip-ablation  # 复用已有消融结果
-  python main.py --ablation-to-compare --dry-run        # 只选配不跑对比
+  python main.py --ablation-to-compare --skip-ablation  # reuse existing ablation results
+  python main.py --ablation-to-compare --dry-run        # select configuration only, skip the comparison
 """
 import json
 import os
@@ -19,12 +19,12 @@ from typing import Dict, List, Optional, Tuple
 from src.config import Config, _LOCAL_OVERRIDE, _PROJECT_ROOT, deep_merge
 from src.evaluation.ablation import run_ablation
 
-# ── 决策维度的参数映射 ────────────────────────────────────
-# 消融变体名称 → 实际参数值（用于 config.local.yaml 更新）
+# ── Parameter mapping for the decision dimensions ─────────
+# ablation variant name → actual parameter value (used to update config.local.yaml)
 
 DECISION_DIMS = {
     "llm_backbone": {
-        "variants": {},  # 动态填充：variant_name -> {"model": ..., "provider": ...}
+        "variants": {},  # filled dynamically: variant_name -> {"model": ..., "provider": ...}
         "param_path": ["nutrichat", "model"],
     },
     "router": {
@@ -51,7 +51,7 @@ DECISION_DIMS = {
     },
 }
 
-# ── 综合评分权重 ──────────────────────────────────────────
+# ── Composite score weights ───────────────────────────────
 WEIGHTS = {
     "correctness": 0.40,
     "scientific_depth": 0.30,
@@ -61,9 +61,9 @@ WEIGHTS = {
 
 
 def _composite_score(metrics: dict) -> float:
-    """计算综合得分 = 0.4×correctness + 0.3×depth + 0.2×precision - 0.1×halluc.
+    """Compute the composite score = 0.4×correctness + 0.3×depth + 0.2×precision - 0.1×halluc.
 
-    halluc 为 None 时跳过该项，权重归一化。
+    If halluc is None that term is skipped and the weights are renormalized.
     """
     c = (metrics.get("correctness") or {}).get("mean") or 0
     d = (metrics.get("scientific_depth") or {}).get("mean") or 0
@@ -71,14 +71,14 @@ def _composite_score(metrics: dict) -> float:
     h = (metrics.get("hallucination_n5") or metrics.get("hallucination") or {}).get("mean")
 
     if h is None:
-        # 没有 halluc 时归一化到 1.0
+        # Normalize to 1.0 when there is no halluc
         w_total = WEIGHTS["correctness"] + WEIGHTS["scientific_depth"] + WEIGHTS["precision"]
         return (c * WEIGHTS["correctness"] + d * WEIGHTS["scientific_depth"] + p * WEIGHTS["precision"]) / w_total
     return c * WEIGHTS["correctness"] + d * WEIGHTS["scientific_depth"] + p * WEIGHTS["precision"] + h * WEIGHTS["hallucination"]
 
 
 def _load_ablation_report(log_dir: str) -> Optional[dict]:
-    """从指定日志目录加载 ablation_report.json。"""
+    """Load ablation_report.json from the given log directory."""
     path = os.path.join(log_dir, "ablation_report.json")
     if not os.path.exists(path):
         return None
@@ -87,7 +87,7 @@ def _load_ablation_report(log_dir: str) -> Optional[dict]:
 
 
 def _find_latest_ablation_log() -> Optional[str]:
-    """找到最近一次消融运行的日志目录。"""
+    """Find the log directory of the most recent ablation run."""
     logs_dir = os.path.join(_PROJECT_ROOT, "logs")
     if not os.path.isdir(logs_dir):
         return None
@@ -99,35 +99,35 @@ def _find_latest_ablation_log() -> Optional[str]:
 
 
 # ═══════════════════════════════════════════════════════════
-# Phase 2: 消融结果解析 + 自动选配
+# Phase 2: ablation result parsing + automatic configuration selection
 # ═══════════════════════════════════════════════════════════
 
 class AblationParser:
-    """解析 ablation_report.json，计算综合得分，选出最优参数。"""
+    """Parse ablation_report.json, compute composite scores, and select the best parameters."""
 
     def __init__(self, report: dict):
         self.report = report
 
     def _variant_scores(self, dim_key: str) -> List[Tuple[str, float, dict]]:
-        """返回维度的变体列表: [(name, composite_score, raw_metrics), ...]"""
+        """Return the dimension's variant list: [(name, composite_score, raw_metrics), ...]"""
         dim_data = self.report.get(dim_key, {})
         results = []
         for vname, metrics in dim_data.items():
             score = _composite_score(metrics)
             results.append((vname, score, metrics))
-        # 按综合得分降序排列
+        # Sort by composite score in descending order
         results.sort(key=lambda x: x[1], reverse=True)
         return results
 
     def pick_best(self, dim_key: str) -> Tuple[str, float, dict]:
-        """选出指定维度的最优变体。返回 (variant_name, score, metrics)."""
+        """Select the best variant of the given dimension. Returns (variant_name, score, metrics)."""
         ranked = self._variant_scores(dim_key)
         if not ranked:
             raise ValueError(f"Dimension '{dim_key}' not found in ablation report")
         return ranked[0]
 
     def pick_all_best(self) -> dict:
-        """选出全部 4 个决策维的最优变体。"""
+        """Select the best variant across all 4 decision dimensions."""
         result = {}
         for dim_key in ["llm_backbone", "router", "synthesis", "rag"]:
             name, score, metrics = self.pick_best(dim_key)
@@ -143,14 +143,14 @@ class AblationParser:
         return result
 
     def summarize(self, picks: dict) -> str:
-        """生成选配摘要（供 Step 4 报告用）。"""
+        """Generate the configuration summary (used for the Step 4 report)."""
         lines = []
         for dim_key in ["llm_backbone", "router", "synthesis", "rag"]:
             pick = picks[dim_key]
             ranked = self._variant_scores(dim_key)
             lines.append(f"## {dim_key}")
             lines.append("")
-            lines.append(f"| Variant | Correctness | Depth | Precision | Halluc | 综合得分 |")
+            lines.append(f"| Variant | Correctness | Depth | Precision | Halluc | Composite Score |")
             lines.append(f"|---------|------------|-------|-----------|--------|---------|")
             for vname, score, metrics in ranked:
                 c = (metrics.get("correctness") or {}).get("mean")
@@ -158,7 +158,7 @@ class AblationParser:
                 p = (metrics.get("precision") or {}).get("mean")
                 h = (metrics.get("hallucination_n5") or metrics.get("hallucination") or {}).get("mean")
                 h_str = f"{h:.4f}" if h is not None else "N/A"
-                marker = " ← **最优**" if vname == pick["name"] else ""
+                marker = " ← **best**" if vname == pick["name"] else ""
                 lines.append(
                     f"| {vname} | {c:.2f} | {d:.2f} | {p:.2f} | {h_str} | {score:.3f}{marker} |"
                 )
@@ -167,15 +167,15 @@ class AblationParser:
 
 
 # ═══════════════════════════════════════════════════════════
-# Phase 2: 配置更新
+# Phase 2: configuration update
 # ═══════════════════════════════════════════════════════════
 
 def _resolve_backbone_config(variant_name: str) -> dict:
-    """将 llm_backbone 变体名解析为模型的 provider+model 配置。
+    """Resolve an llm_backbone variant name to the model's provider+model configuration.
 
-    搜索顺序：
-      1. models.yaml baselines（支持 flat list 和 provider-grouped dict 两种格式）
-      2. 从名称推断 provider（"provider/ModelName" 格式）
+    Search order:
+      1. models.yaml baselines (supports both a flat list and a provider-grouped dict)
+      2. Infer the provider from the name (the "provider/ModelName" format)
     """
     from src.config import _model_cfg
 
@@ -214,44 +214,44 @@ def _resolve_backbone_config(variant_name: str) -> dict:
 
 
 def _update_config_local(picks: dict, dry_run: bool = False) -> Optional[str]:
-    """更新 config.local.yaml 的最优参数。返回备份路径（dry_run 时返回 None）。"""
+    """Update config.local.yaml with the best parameters. Returns the backup path (None in dry_run)."""
     local_path = os.path.join(_PROJECT_ROOT, "config", "config.local.yaml")
     if not os.path.exists(local_path):
         print("  [ERROR] config.local.yaml not found")
         return None
 
-    # 读取当前配置
+    # Read the current configuration
     with open(local_path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    # 备份
+    # Backup
     bak_path = local_path + ".bak"
     if not dry_run:
         shutil.copy2(local_path, bak_path)
 
-    # 解析 backbone 配置
+    # Resolve the backbone configuration
     bb_name = picks["llm_backbone"]["name"]
     bb_config = _resolve_backbone_config(bb_name)
 
-    # 构建变更摘要
+    # Build the change summary
     changes = [
         ("nutrichat.model", bb_config["model"]),
         ("nutrichat.provider", bb_config["provider"]),
     ]
 
-    # 使用 yaml 安全地修改（通过重写文件）
+    # Modify safely through yaml (by rewriting the file)
     import yaml
     try:
         with open(local_path, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f) or {}
 
-        # 更新 nutrichat
+        # Update nutrichat
         if "nutrichat" not in config:
             config["nutrichat"] = {}
         config["nutrichat"]["model"] = bb_config["model"]
         config["nutrichat"]["provider"] = bb_config["provider"]
 
-        # 更新其他决策维（写入 ablation 段作为参考）
+        # Update the other decision dimensions (written to the ablation section for reference)
         if "ablation" not in config:
             config["ablation"] = {}
         config["ablation"]["_selected"] = {
@@ -279,9 +279,9 @@ def _update_config_local(picks: dict, dry_run: bool = False) -> Optional[str]:
 
 
 def _print_selection_summary(picks: dict):
-    """打印选配结果摘要。"""
+    """Print a summary of the selected configuration."""
     print(f"\n{'=' * 60}")
-    print(f"  Phase 2: 最优配置")
+    print(f"  Phase 2: Best configuration")
     print(f"{'=' * 60}")
     w = max(len(p["name"]) for p in picks.values()) + 2
 
@@ -292,15 +292,15 @@ def _print_selection_summary(picks: dict):
 
 
 # ═══════════════════════════════════════════════════════════
-# Phase 3: 对比执行
+# Phase 3: comparison execution
 # ═══════════════════════════════════════════════════════════
 
 def _run_compare(skip_nutrichat: bool = False, quick: bool = False):
-    """执行 --compare。
+    """Execute --compare.
 
     Args:
-        skip_nutrichat: 跳过 NutriCHAT，仅跑基线
-        quick: 快速模式（小采样 + 跳过 SelfCheck）
+        skip_nutrichat: skip NutriCHAT and run baselines only
+        quick: quick mode (small sample + skip SelfCheck)
     """
     from src.main import run_comparison, setup_engine
     from src.config import Config, _LOCAL_OVERRIDE
@@ -336,43 +336,43 @@ def _run_compare(skip_nutrichat: bool = False, quick: bool = False):
 
 
 # ═══════════════════════════════════════════════════════════
-# Phase 4: 管道报告
+# Phase 4: pipeline report
 # ═══════════════════════════════════════════════════════════
 
 def _write_pipeline_report(log_dir: str, picks: dict, summary_text: str,
                             ablation_log_dir: str, compare_log_dir: str):
-    """写入 ablation_to_compare_summary.md。"""
+    """Write ablation_to_compare_summary.md."""
     path = os.path.join(log_dir, "ablation_to_compare_summary.md")
     with open(path, "w", encoding="utf-8") as f:
-        f.write(f"# Ablation → Compare 管道报告\n\n")
-        f.write(f"*生成时间: {time.strftime('%Y-%m-%d %H:%M:%S')}*\n\n")
-        f.write(f"## 最优配置\n\n")
-        f.write(f"| 维度 | 选择 | 综合得分 |\n")
-        f.write(f"|------|------|---------|\n")
+        f.write(f"# Ablation → Compare Pipeline Report\n\n")
+        f.write(f"*Generated: {time.strftime('%Y-%m-%d %H:%M:%S')}*\n\n")
+        f.write(f"## Best configuration\n\n")
+        f.write(f"| Dimension | Choice | Composite Score |\n")
+        f.write(f"|-----------|--------|-----------------|\n")
         for dim_key in ["llm_backbone", "router", "synthesis", "rag"]:
             pick = picks[dim_key]
             f.write(f"| {dim_key} | {pick['name']} | {pick['score']:.3f} |\n")
 
-        f.write(f"\n> Multi-Agent 最终配置：{picks['llm_backbone']['name']} + ")
+        f.write(f"\n> Final Multi-Agent configuration: {picks['llm_backbone']['name']} + ")
         f.write(f"Router={picks['router']['name']} + ")
         f.write(f"Synthesis={picks['synthesis']['name']} + ")
         f.write(f"RAG={picks['rag']['name']}\n\n")
 
-        f.write(f"## 消融结果\n\n")
+        f.write(f"## Ablation results\n\n")
         f.write(summary_text)
-        f.write(f"\n## 日志\n\n")
-        f.write(f"- 管道日志: `{log_dir}`\n")
-        f.write(f"- 消融日志: `{ablation_log_dir}`\n")
-        f.write(f"- 对比日志: `{compare_log_dir}`\n")
+        f.write(f"\n## Logs\n\n")
+        f.write(f"- Pipeline log: `{log_dir}`\n")
+        f.write(f"- Ablation log: `{ablation_log_dir}`\n")
+        f.write(f"- Comparison log: `{compare_log_dir}`\n")
 
     print(f"  [Report] {path}")
 
 
 def _consolidate_results(log_dir: str, ablation_log_dir: str, compare_log_dir: str):
-    """将消融和对比的结果文件复制到管道日志目录，统一存放。"""
+    """Copy the ablation and comparison result files into the pipeline log directory for unified storage."""
     import shutil
 
-    # 冲突文件：两个目录都有同名的文件（responses.json, config.yaml）
+    # Conflicting files: both directories can contain the same file names (responses.json, config.yaml)
     _CONFLICT_NAMES = {"responses.json", "config.yaml"}
 
     for f in ["ablation_report.json", "ablation_report.md", "responses.json", "config.yaml"]:
@@ -400,20 +400,20 @@ def _consolidate_results(log_dir: str, ablation_log_dir: str, compare_log_dir: s
 
 
 # ═══════════════════════════════════════════════════════════
-# 主入口
+# Main entry point
 # ═══════════════════════════════════════════════════════════
 
 def run_ablation_to_compare(skip_ablation: bool = False, dry_run: bool = False, quick: bool = False):
-    """一键消融→对比管道。
+    """One-shot ablation → comparison pipeline.
 
     Args:
-        skip_ablation: True 时复用最近的消融结果，不重新跑
-        dry_run: True 时只选配不跑对比、不写配置
-        quick: 快速模式（小采样 + 跳过 SelfCheck）
+        skip_ablation: if True, reuse the most recent ablation results instead of re-running
+        dry_run: if True, only select the configuration without running the comparison or writing config
+        quick: quick mode (small sample + skip SelfCheck)
     """
     t0 = time.time()
 
-    # ── Phase 1: 消融 ──────────────────────────────────────
+    # ── Phase 1: ablation ──────────────────────────────────
     ablation_log_dir = None
     if skip_ablation:
         ablation_log_dir = _find_latest_ablation_log()
@@ -421,12 +421,12 @@ def run_ablation_to_compare(skip_ablation: bool = False, dry_run: bool = False, 
             print("  [Error] No previous ablation log found for --skip-ablation")
             return
         print(f"\n{'=' * 60}")
-        print(f"  Phase 1: 复用消融结果")
+        print(f"  Phase 1: Reusing ablation results")
         print(f"  Log: {ablation_log_dir}")
         print(f"{'=' * 60}")
     else:
         print(f"\n{'=' * 60}")
-        print(f"  Phase 1: 消融{'（快速模式）' if quick else ''}")
+        print(f"  Phase 1: Ablation{' (quick mode)' if quick else ''}")
         print(f"{'=' * 60}")
         if quick:
             quick_sr = (_LOCAL_OVERRIDE.get("scoring_ablation") or {}).get("quick", {}).get("sample_ratio")
@@ -435,9 +435,9 @@ def run_ablation_to_compare(skip_ablation: bool = False, dry_run: bool = False, 
         run_ablation(dim=None, verbose=False, query_set="all", sample_ratio=quick_sr)
         ablation_log_dir = _find_latest_ablation_log()
 
-    # ── Phase 2: 选配 ──────────────────────────────────────
+    # ── Phase 2: configuration selection ───────────────────
     print(f"\n{'=' * 60}")
-    print(f"  Phase 2: 自动选配")
+    print(f"  Phase 2: Automatic configuration selection")
     print(f"{'=' * 60}")
 
     report = _load_ablation_report(ablation_log_dir)
@@ -455,21 +455,21 @@ def run_ablation_to_compare(skip_ablation: bool = False, dry_run: bool = False, 
         print(summary_text)
         return
 
-    # ── 创建管道日志目录 ──────────────────────────────────
+    # ── Create the pipeline log directory ──────────────────
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     log_dir = os.path.join(_PROJECT_ROOT, "logs", f"ablation_compare_{timestamp}")
     os.makedirs(log_dir, exist_ok=True)
 
-    # 更新配置
+    # Update the configuration
     bak_path = _update_config_local(picks)
 
-    # ── Phase 3: 对比 ──────────────────────────────────────
+    # ── Phase 3: comparison ────────────────────────────────
     print(f"\n{'=' * 60}")
-    print(f"  Phase 3: 基线对比")
+    print(f"  Phase 3: Baseline comparison")
     print(f"{'=' * 60}")
     _run_compare(skip_nutrichat=False, quick=quick)
 
-    # 找到最近的 compare 日志
+    # Find the most recent compare log
     logs_dir = os.path.join(_PROJECT_ROOT, "logs")
     compare_logs = sorted(
         [d for d in os.listdir(logs_dir) if d.startswith("comp_")],
@@ -477,16 +477,16 @@ def run_ablation_to_compare(skip_ablation: bool = False, dry_run: bool = False, 
     )
     compare_log_dir = os.path.join(logs_dir, compare_logs[-1]) if compare_logs else ""
 
-    # ── Phase 4: 报告 ──────────────────────────────────────
+    # ── Phase 4: report ────────────────────────────────────
     print(f"\n{'=' * 60}")
-    print(f"  Phase 4: 管道报告")
+    print(f"  Phase 4: Pipeline report")
     print(f"{'=' * 60}")
     _write_pipeline_report(log_dir, picks, summary_text, ablation_log_dir, compare_log_dir)
 
-    # 统一复制结果到管道目录
+    # Copy all results into the pipeline directory
     _consolidate_results(log_dir, ablation_log_dir, compare_log_dir)
 
-    # 恢复配置（如果不需要改动永久生效）
+    # Restore the configuration (if the change should not persist)
     if bak_path and os.path.exists(bak_path):
         local_path = os.path.join(_PROJECT_ROOT, "config", "config.local.yaml")
         try:
@@ -501,5 +501,5 @@ def run_ablation_to_compare(skip_ablation: bool = False, dry_run: bool = False, 
             print(f"  [WARN] Config restore failed: {e}, backup kept at {bak_path}")
 
     elapsed = time.time() - t0
-    print(f"\n  [Done] Ablation -> Compare 管道完成 ({elapsed:.0f}s)")
-    print(f"  管道日志: {log_dir}")
+    print(f"\n  [Done] Ablation -> Compare pipeline finished ({elapsed:.0f}s)")
+    print(f"  Pipeline log: {log_dir}")

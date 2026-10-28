@@ -3,8 +3,9 @@
 Wraps the Sentence Transformers model as a LangChain-compatible embedding class,
 supporting the same interface as OpenAIEmbeddings.
 
-NOTE: 模块级 _shared_model 确保多实例并发时 GPU 上只加载一份模型，
-      防止并发消融变体各自加载独立副本撑爆显存。
+NOTE: the module-level _shared_model ensures only one copy of the model is loaded on the GPU
+      when multiple instances run concurrently, preventing concurrent ablation variants from
+      each loading an independent copy and exhausting GPU memory.
 """
 import logging
 import threading
@@ -12,7 +13,7 @@ from typing import List
 
 logger = logging.getLogger(__name__)
 
-# 模块级共享 embedding 模型（GPU 显存保护）
+# Module-level shared embedding model (protects GPU memory)
 _shared_model = None
 _shared_model_lock = threading.Lock()
 _shared_model_key = ("", "")  # (model_path, device)
@@ -22,7 +23,7 @@ class Qwen3Embedding:
     """LangChain-compatible embedding wrapper for Qwen3-Embedding-0.6B.
 
     Uses sentence-transformers to load and run the local Qwen3 model.
-    GPU 模型通过模块级单例共享，避免并发创建多个副本。
+    The GPU model is shared through a module-level singleton, avoiding duplicate copies under concurrency.
     Implements embed_query() and embed_documents() for LangChain integration.
     """
 
@@ -42,8 +43,8 @@ class Qwen3Embedding:
     def _load_model(self):
         """Lazy-load the Sentence Transformer model with CPU fallback.
 
-        使用模块级单例：同一 (model_path, device) 只加载一次，
-        后续实例复用已有模型实例。
+        Uses a module-level singleton: the same (model_path, device) is loaded only once,
+        and later instances reuse the existing model instance.
         """
         if self._model is not None:
             return

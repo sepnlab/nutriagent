@@ -1,48 +1,48 @@
-# NutriAgent 评估配置
+# NutriAgent evaluation configuration
 #
-# 用于 --evaluate 和 --compare 命令，CLI 参数可覆盖此文件中的值。
+# Used by the --evaluate and --compare commands; CLI arguments can override the values here.
 #
-#   python main.py --evaluate              # 仅 NutriAgent
-#   python main.py --compare               # NutriAgent + 基线对比
-#   python main.py --compare --baselines-only  # 仅基线
-#   python main.py --evaluate --quick      # 开发模式：3% 采样 + 跳过 SelfCheck
+#   python main.py --evaluate              # NutriAgent only
+#   python main.py --compare               # NutriAgent + baseline comparison
+#   python main.py --compare --baselines-only  # baselines only
+#   python main.py --evaluate --quick      # dev mode: 3% sample + skip SelfCheck
 
-# ---- 评估参数（全局默认）----
+# ---- Evaluation parameters (global defaults) ----
 evaluation:
-  # SelfCheckGPT 报告的 N 值列表（N=5 已验证与 N=20 差异极小）
+  # List of N values reported by SelfCheckGPT (N=5 has been verified to differ only marginally from N=20)
   n_selfcheck_values: [5]
 
-  # SelfCheckGPT 实际生成的样本数（留空则自动取 max(n_selfcheck_values)）
+  # Number of samples SelfCheckGPT actually generates (empty = use max(n_selfcheck_values))
   n_selfcheck_gen_samples:
 
-  # 分层采样（null=全量，0.0-1.0=按比例，>=1=每类固定 N 条）
+  # Stratified sampling (null=all, 0.0-1.0=proportional, >=1=fixed N per category)
   sample_ratio: null
 
-# ---- Agent 架构 ----
-# multi:  多智能体系统（Router → Specialists → Synthesis）
-# both:   single 与 multi 对比
+# ---- Agent architecture ----
+# multi:  multi-agent system (Router → Specialists → Synthesis)
+# both:   compare single vs multi
 agent_mode: multi
 
-# ---- 查询集 ----
-# all:     全部查询
-# chinese: 仅中文查询（id 以 CN- 开头）
-# western: 仅英文查询
+# ---- Query set ----
+# all:     all queries
+# chinese: Chinese queries only (ids starting with CN-)
+# western: English queries only
 query_set: all
 
-# ---- 基线模型（仅 --compare 时生效）----
-# 留空 = 使用全部基线模型（config/models.yaml baselines.models）。
-# 本地过滤请编辑 config/config.local.yaml 的 baselines 段。
+# ---- Baseline models (only used with --compare) ----
+# Empty = use all baselines (config/models.yaml baselines.models).
+# To filter locally, edit the baselines section of config/config.local.yaml.
 baselines: null
 
-# ---- 详细分组分析 ----
-# 额外打印按查询类型和工具类别的分组表
+# ---- Detailed breakdown analysis ----
+# Also print breakdown tables by query type and tool category
 breakdown: true
 
-# ---- 评分组件开关 ----
+# ---- Scoring component switches ----
 scoring:
-  evaluator_llm: true          # LLM 自动评分（correctness / precision / depth）
-  selfcheck: true              # SelfCheckGPT-NLI 幻觉检测（--quick 自动跳过）
-  n_selfcheck_values: null     # SelfCheck 样本量（null=继承 evaluation.n_selfcheck_values）
-  tolerance: true              # 容差精度（±2% / ±5%）
-  flesch: true                 # Flesch Reading Ease 可读性
-  shuffle_responses: false     # 评估时随机打乱 response 顺序，减轻位置偏差
+  evaluator_llm: true          # LLM automatic scoring (correctness / precision / depth)
+  selfcheck: true              # SelfCheckGPT-NLI hallucination detection (--quick skips it)
+  n_selfcheck_values: null     # SelfCheck sample sizes (null=inherit evaluation.n_selfcheck_values)
+  tolerance: true              # Tolerance accuracy (±2% / ±5%)
+  flesch: true                 # Flesch Reading Ease readability
+  shuffle_responses: false     # Randomize response order during evaluation to reduce position bias

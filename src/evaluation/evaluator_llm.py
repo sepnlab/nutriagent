@@ -62,7 +62,7 @@ IMPORTANT:
 - Compare each response against the others (best=5, slightly worse=4, etc.).
 - No text before or after the JSON object."""
 
-# n=1 时使用绝对评分 Prompt（消融框架每次只传 1 个响应，比较评分无意义）
+# Use the absolute-scoring prompt when n=1 (the ablation framework passes one response at a time, so comparative scoring is meaningless)
 EVALUATOR_PROMPT_SINGLE = """You are an expert evaluator of poultry nutrition responses. Evaluate the following response to the question using the detailed rubrics below. Score each metric independently based on the rubric — do NOT compare with other responses.
 
 QUESTION: {query}
@@ -164,11 +164,11 @@ class EvaluatorLLM:
 
     shuffle: bool = False
 
-    # 类级别评分缓存：hash(query+response) → scores dict
-    # 跨实例共享，增量消融跳过的维度可直接复用评分
+    # Class-level scoring cache: hash(query+response) → scores dict
+    # Shared across instances, so dimensions skipped by incremental ablation can reuse scores directly
     _score_cache: Dict[str, Dict] = {}
     _cache_lock: threading.Lock = threading.Lock()
-    _cache_path: Optional[str] = None  # 磁盘持久化路径
+    _cache_path: Optional[str] = None  # on-disk persistence path
 
     @classmethod
     def _load_cache(cls):
@@ -311,28 +311,28 @@ class EvaluatorLLM:
 
     @staticmethod
     def _repair_json(text: str) -> str:
-        """修复 LLM 输出的常见 JSON 格式错误后重试解析。
+        """Repair common JSON formatting errors in LLM output, then retry parsing.
 
-        DeepSeek 等推理模型偶发 JSON 格式问题：
-        - 尾逗号 (trailing commas)
-        - 键名用单引号而非双引号
-        - 括号/引号被截断（max_tokens 不够时）
-        - 字符串值中的换行
+        Reasoning models such as DeepSeek occasionally produce JSON formatting issues:
+        - trailing commas
+        - keys in single quotes instead of double quotes
+        - truncated brackets/quotes (when max_tokens is insufficient)
+        - newlines inside string values
         """
         import re
         repaired = text.strip()
-        # 1. 去掉最外层的 ``` 标记（如果 _extract_json 没抓到）
+        # 1. Remove the outermost ``` markers (if _extract_json did not catch them)
         if repaired.startswith("```"):
             repaired = re.sub(r"^```(?:json)?\s*", "", repaired)
             repaired = re.sub(r"\s*```$", "", repaired)
-        # 2. 移除尾逗号（在 ] 或 } 之前的逗号）
+        # 2. Remove trailing commas (a comma before ] or })
         repaired = re.sub(r",\s*([}\]])", r"\1", repaired)
-        # 3. 将单引号键名转为双引号（如 'key': → "key":）
+        # 3. Convert single-quoted keys to double quotes (e.g. 'key': → "key":)
         repaired = re.sub(r"'([^']+)'\s*:", r'"\1":', repaired)
-        # 4. 将单引号字符串值转为双引号（如 : 'value' → : "value"）
-        #    只处理冒号后的单引号，避免连字符内的误伤
+        # 4. Convert single-quoted string values to double quotes (e.g. : 'value' → : "value")
+        #    Only handles the single quote after a colon to avoid damaging hyphens
         repaired = re.sub(r":\s*'([^']*)'\s*([,\}\]])", r': "\1"\2', repaired)
-        # 5. 尝试截断到最外层 } 结尾（去除截断多余内容）
+        # 5. Try truncating to the outermost closing } (drop extra truncated content)
         brace_depth = 0
         last_close = -1
         for i, ch in enumerate(repaired):
@@ -373,7 +373,7 @@ class EvaluatorLLM:
             for i, (rid, text) in enumerate(items)
         ])
 
-        # n=1 时使用绝对评分 Prompt，避免比较评分无参照物导致满分膨胀
+        # Use the absolute-scoring prompt when n=1 to avoid score inflation from comparative scoring without a reference
         prompt_template = EVALUATOR_PROMPT_SINGLE if n == 1 else EVALUATOR_PROMPT
         prompt = prompt_template.format(
             n=n,
@@ -412,7 +412,7 @@ class EvaluatorLLM:
             return self._parse_result(result, list(responses.keys()))
         except json.JSONDecodeError as e:
             logger.warning("JSON parse error: %s | raw: %s...", e, content[:200])
-            # 尝试修复后重试一次
+            # Try repairing and retrying once
             repaired = self._repair_json(content)
             try:
                 result = json.loads(repaired)

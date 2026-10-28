@@ -58,7 +58,7 @@ class MultiAgentEngine:
         # Initialize router
         self.router = RouterAgent()
 
-        # Initialize specialists（使用独立 token 限制，仅检索工具数据）
+        # Initialize specialists (using an independent token cap: they only retrieve tool data)
         kw = dict(
             model=model,
             temperature=temperature,

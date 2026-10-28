@@ -1,13 +1,13 @@
-"""YAML 配置的 Pydantic schema 校验。
+"""Pydantic schema validation for the YAML configuration.
 
-加载 YAML 后校验结构，字段拼写错误直接报错（不再静默回退）。
+Validates structure after loading YAML so field typos raise directly (no more silent fallback).
 """
 import re
 from typing import Dict, List, Optional, Union
 from pydantic import BaseModel, ConfigDict, field_validator
 
 
-# ── Provider-Model 格式校验 ────────────────────────────────
+# ── Provider-model format validation ───────────────────────
 
 _PROVIDER_MODEL_PATTERNS = {
     # DashScope IDs are usually lower-case, but some catalog entries are
@@ -49,14 +49,14 @@ def _validate_model_by_provider(provider: str, model: str) -> str:
 # ── models.yaml ───────────────────────────────────────────
 
 class ProviderDef(BaseModel):
-    """供应商连接信息定义"""
+    """Provider connection info definition"""
     provider: str
     api_key_env: str = "SILICONFLOW_API_KEY"
     base_url: str = "https://api.siliconflow.cn/v1"
 
 
 class RoleModelConfig(BaseModel):
-    """角色模型配置（nutrichat / evaluator），通过 provider 引用连接信息"""
+    """Role model configuration (nutrichat / evaluator); connection info referenced through provider"""
     provider: str = "siliconflow"
     model: str
     temperature: float = 0.0
@@ -71,7 +71,7 @@ class RoleModelConfig(BaseModel):
 
 
 class SelfCheckRoleConfig(BaseModel):
-    """SelfCheck 模型配置，不指定 provider/model 时继承 nutrichat"""
+    """SelfCheck model configuration; inherits nutrichat when provider/model are not specified"""
     provider: Optional[str] = None
     model: Optional[str] = None
     temperature: float = 1.0
@@ -298,7 +298,7 @@ class LLMBackboneVariant(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str
     model: str = "deepseek-ai/DeepSeek-V4-Flash"
-    model_ref: Optional[str] = None  # models.yaml baselines 的 name（推荐）
+    model_ref: Optional[str] = None  # name of a models.yaml baseline (recommended)
     description: str = ""
     skip_selfcheck: bool = False
 
@@ -339,12 +339,12 @@ class FactorialDimension(BaseModel):
 class AblationScoring(BaseModel):
     model_config = ConfigDict(extra="forbid")
     evaluator_llm: bool = True
-    selfcheck: bool = False  # 消融默认跳过（太慢）
+    selfcheck: bool = False  # ablations skip it by default (too slow)
     hallucination_ratio: float = 1.0
     n_selfcheck_values: Optional[List[int]] = None
     flesch: bool = True
     tolerance: bool = True
-    # --quick 覆盖参数（config.local.yaml 可自定义），不参与 AblationScoring 校验
+    # --quick override parameters (customizable in config.local.yaml); not validated by AblationScoring
     quick: Optional[dict] = None
 
     @field_validator("hallucination_ratio")
@@ -371,7 +371,7 @@ class AblationFile(BaseModel):
 # ── evaluate.yaml ─────────────────────────────────────────
 
 class EvaluationSettings(BaseModel):
-    """评估参数（全局默认，Config 在模块加载时读取）"""
+    """Evaluation parameters (global defaults; Config reads them at module load time)"""
     n_selfcheck_values: List[int] = [5, 10, 20]
     n_selfcheck_gen_samples: Optional[int] = None
     sample_ratio: Optional[float] = None
@@ -401,7 +401,7 @@ class ScoringSettings(BaseModel):
     flesch: bool = True
     shuffle_responses: bool = False
     hallucination_ratio: float = 1.0
-    # --quick 覆盖参数（config.local.yaml 可自定义），不参与 ScoringSettings 校验
+    # --quick override parameters (customizable in config.local.yaml); not validated by ScoringSettings
     quick: Optional[dict] = None
 
     @field_validator("hallucination_ratio")
@@ -437,7 +437,7 @@ class EvaluateFile(BaseModel):
         return v
 
 
-# ── 校验入口 ─────────────────────────────────────────────
+# ── Validation entry point ────────────────────────────────
 
 def validate_config(name: str, data: dict) -> dict:
     """Validate a raw YAML dict against its schema.
@@ -466,7 +466,7 @@ def validate_config(name: str, data: dict) -> dict:
         return data
 
     validated = model_cls(**data)
-    # models.yaml: 保留原始字段的显式 null 以区分 unset（用于 thinking 策略判断）
+    # models.yaml: keep the explicit null of original fields to distinguish unset (used by the thinking policy)
     if name == "models":
         return validated.model_dump(exclude_unset=True)
     return validated.model_dump()

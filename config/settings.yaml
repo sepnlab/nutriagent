@@ -1,80 +1,80 @@
-# NutriCHAT 运行时设置
+# NutriCHAT runtime settings
 #
-# API key 仍在 .env 中管理（不入库）
-# 其余配置集中在此文件和 config/ 下各 YAML 中
+# API keys are still managed in .env (not committed)
+# All other settings are centralized in this file and the YAML files under config/
 
-# ---- 品种 ----
-# broiler（肉鸡）或 layer（蛋鸡）
+# ---- Species ----
+# broiler (meat-type chicken) or layer (egg-type chicken)
 species: layer
 
-# ---- 响应生成 ----
-# 最大 token 数（原 NutriCHAT 单 Agent 用 200，Multi-Agent Synthesis 需要更多空间）
+# ---- Response generation ----
+# Maximum number of tokens (the original single-agent NutriCHAT used 200; Multi-Agent Synthesis needs more room)
 max_tokens: 512
-# Specialist 中间输出 token 上限（仅检索工具数据，不需要长篇回答）
+# Token cap for specialist intermediate output (tool data retrieval only, no long answers needed)
 specialist_max_tokens: 256
-# SelfCheckGPT 采样 token 上限（NLI 仅检测事实是否存在，不需要完整回答）
+# Token cap for SelfCheckGPT sampling (NLI only checks whether facts exist, no full answer needed)
 selfcheck_max_tokens: 200
 
-# ---- 检索设置 ----
+# ---- Retrieval settings ----
 retrieval:
-  # RAG 检索返回的最近邻文档数
-  #   >1: 多文档检索，可提供更丰富上下文（配合重排序更佳）
+  # Number of nearest-neighbor documents returned by RAG retrieval
+  #   >1: multi-document retrieval, richer context (better with reranking)
   k: 1
 
-# ---- API 调用设置 ----
+# ---- API call settings ----
 api:
-  # LLM API 超时（秒）
-  #   60+:  网络不稳定或使用境外 API 时
+  # LLM API timeout (seconds)
+  #   60+: for unstable networks or overseas APIs
   timeout: 30
 
-  # 最大并发请求数（受 _RateLimiter 控制，建议不超过 6）
+  # Maximum number of concurrent requests (controlled by _RateLimiter; 6 or less recommended)
   max_concurrent: 6
 
-  # 自动重试设置
+  # Automatic retry settings
   retry:
-    # 最大重试次数
-    #   3: 默认，适应多数 API 临时故障
-    #   5+: API 频繁限流时
+    # Maximum number of retries
+    #   3: default, handles most transient API failures
+    #   5+: when the API is frequently rate-limited
     max_attempts: 3
 
-    # 指数退避初始等待（秒）
-    #   1: 快速重试
+    # Initial exponential-backoff wait (seconds)
+    #   1: fast retry
     min_wait: 2
 
-    # 指数退避最大等待（秒）
-    #   30:  默认，避免长时间挂起
-    #   120+: 允许更激进的重试
+    # Maximum exponential-backoff wait (seconds)
+    #   30:  default, avoids long hangs
+    #   120+: allows more aggressive retries
     max_wait: 30
 
-  # 基线模型调用时的额外超时（二次确认，paper 评测环境特有）
-  # 留空则沿用 api.timeout
+  # Extra timeout when calling baseline models (secondary confirmation, specific to the paper's evaluation environment)
+  # Empty = use api.timeout
   baseline_timeout:
 
-# ---- Agent 设置 ----
+# ---- Agent settings ----
 agent:
-  # Router LLM 参数
+  # Router LLM parameters
   router:
     temperature: 0.0
     max_tokens: 200
 
-  # Synthesis LLM 参数（默认使用 Config.MAX_TOKENS，无需额外设置）
+  # Synthesis LLM parameters (Config.MAX_TOKENS is used by default; no extra setting needed)
   synthesis:
     temperature: 0.0
 
-  # ReAct Agent 参数
+  # ReAct Agent parameters
   max_iterations: 7
   early_stopping: true
 
-# ---- 评估设置（evaluate.yaml 可覆盖） ----
+# ---- Evaluation settings (overridable by evaluate.yaml) ----
 evaluation:
-  # SelfCheckGPT 按比例跳过部分查询（0=跳过, 1.0=全部）
-  # 默认值在 evaluate.yaml 中定义，此处仅作 fallback
+  # SelfCheckGPT randomly skips a proportion of queries (0=skip, 1.0=all)
+  # Defaults are defined in evaluate.yaml; this is only a fallback
   hallucination_ratio: 1.0
-  # 分层采样（null=全量，0.0-1.0=按比例，>=1=每类固定 N 条）
+  # Stratified sampling (null=all, 0.0-1.0=proportional, >=1=fixed N per category)
   sample_ratio: null
 
-# ---- 基线模型设置 ----
+# ---- Baseline model settings ----
 baselines:
-  # 思考模型（thinking_baselines）的默认 max_tokens
-  # 思考过程会消耗额外 token，默认值比普通模型大
+  # Default max_tokens for thinking models (thinking_baselines)
+  # The reasoning process consumes extra tokens, so the default is larger than for normal models
   thinking_max_tokens: 4096

@@ -202,8 +202,8 @@ class ValidationResult:
 def _usable_alias(key: str) -> bool:
     """Drop aliases that are too short to match safely.
 
-    Chinese aliases are allowed at two characters (玉米, 豆粕48); Latin aliases
-    need at least three characters. Ambiguous aliases are excluded separately.
+    Chinese aliases are allowed at two characters; Latin aliases need at least
+    three characters. Ambiguous aliases are excluded separately.
     """
     if re.search(r"[\u4e00-\u9fff]", key):
         return len(key) >= 2
@@ -216,7 +216,7 @@ def _entity_lexicon() -> Tuple[Tuple[str, str], ...]:
 
     Sources: corpus ingredient/breed names plus the curated alias table
     (``corpus/shared/ingredient_alias.csv``). Aliases flagged ``ambiguous``
-    (e.g. bare 豆粕 across 46/48/50% variants) are skipped so the resolver
+    (e.g. bare soybean-meal aliases across 46/48/50% variants) are skipped so the resolver
     never guesses a variant.
     """
     import pandas as pd

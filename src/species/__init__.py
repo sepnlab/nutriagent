@@ -1,6 +1,6 @@
-"""品种策略工厂。
+"""Species strategy factory.
 
-用法：
+Usage:
     from src.species import get_handler
     handler = get_handler("broiler")
     print(handler.display_name)
@@ -17,14 +17,14 @@ _HANDLERS = {
 
 
 def get_handler(species: str = None) -> SpeciesHandler:
-    """获取品种处理器。
+    """Get the species handler.
 
     Args:
-        species: 品种标识符（'broiler' 或 'layer'）。
-                 为 None 时从 Config 读取。
+        species: species identifier ('broiler' or 'layer').
+                 Read from Config when None.
 
     Returns:
-        SpeciesHandler 实例。
+        A SpeciesHandler instance.
     """
     if species is None:
         from src.config import Config

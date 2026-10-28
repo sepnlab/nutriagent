@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""NutriCHAT — 家禽营养 AI Agent 命令行入口。
+"""NutriCHAT — command-line entry point for the poultry nutrition AI agent.
 
 Usage:
     python main.py --query "What is the crude protein of Corn Grain?"

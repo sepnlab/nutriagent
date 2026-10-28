@@ -1,10 +1,10 @@
-"""NutriCHAT 评估框架 — 整合全部四种评估方法。
+"""NutriCHAT evaluation framework — integrates all four evaluation methods.
 
-四种评估方法：
-  ① EvaluatorLLM — LLM 自动评分（correctness / precision / depth）
-  ② 容差精度 — 数值查询的 ±2%/±5% 准确率
-  ③ Flesch Reading Ease — 可读性
-  ④ SelfCheckGPT-NLI — 跨样本不一致性检测（cross-sample inconsistency）
+Four evaluation methods:
+  1) EvaluatorLLM — LLM automatic scoring (correctness / precision / depth)
+  2) Tolerance accuracy — ±2%/±5% accuracy for numeric queries
+  3) Flesch Reading Ease — readability
+  4) SelfCheckGPT-NLI — cross-sample inconsistency detection
 """
 import json
 import os
@@ -16,7 +16,7 @@ from src.config import Config
 
 
 class EvalReport:
-    """单个评估运行的报告容器。"""
+    """Report container for a single evaluation run."""
 
     def __init__(self, method_name: str):
         self.method_name = method_name
@@ -67,7 +67,7 @@ class EvalReport:
         }
 
     def summary(self) -> dict:
-        # Overall weighted score（三指标等权）
+        # Overall weighted score (three metrics equally weighted)
         c_mean = self._stats(self.correctness)["mean"] or 0
         p_mean = self._stats(self.precision)["mean"]
         d_mean = self._stats(self.scientific_depth)["mean"] or 0
@@ -133,22 +133,22 @@ def _count_syllables(word: str) -> int:
 
 
 def parse_numeric(response: str) -> List[Tuple[float, bool]]:
-    """从响应文本中提取数值。
+    """Extract numeric values from the response text.
 
     Returns:
-        [(value, is_range), ...]  — is_range=True 表示是范围（取中点）
+        [(value, is_range), ...]  — is_range=True means it is a range (midpoint used)
     """
     results = []
     text = response.replace(",", "")
 
-    # 优先匹配范围: "20–25%", "10-15%", "between X and Y"
+    # Prefer matching ranges first: "20–25%", "10-15%", "between X and Y"
     range_pat = re.findall(r"(?:between\s+)?(\d+\.?\d*)\s*(?:-|–|to|and)\s*(\d+\.?\d*)", text, re.IGNORECASE)
     for lo, hi in range_pat:
         lo, hi = float(lo), float(hi)
-        if 0 < lo < hi and hi / lo < 3:  # 合理范围
+        if 0 < lo < hi and hi / lo < 3:  # plausible range
             results.append(((lo + hi) / 2, True))
 
-    # 单值: 数字 + 可能的单位
+    # Single value: number + optional unit
     single_pat = re.findall(r"(?<![a-zA-Z])(\d+\.?\d*)\s*(?:\%|g|kg|mg|kcal|mm|N|IU)?", text)
     for v in single_pat:
         v_float = float(v)
@@ -175,15 +175,15 @@ def check_tolerance(predicted: float, ground_truth: float, tolerance: float = 0.
 def evaluate_tolerance(
     response: str, ground_truth: float, tolerance: float = 0.05
 ) -> Optional[float]:
-    """评估单条响应的容差精度。
+    """Evaluate tolerance accuracy for a single response.
 
-    Returns: 1.0 (正确), 0.0 (错误), None (无法解析)
+    Returns: 1.0 (correct), 0.0 (incorrect), None (unparseable)
     """
     values = parse_numeric(response)
     if not values:
         return None
 
-    # 取最接近 ground truth 的解析值
+    # Take the parsed value closest to the ground truth
     best = min(values, key=lambda x: abs(x[0] - ground_truth))
     return 1.0 if check_tolerance(best[0], ground_truth, tolerance) else 0.0
 
@@ -204,22 +204,22 @@ def run_evaluation_pipeline(
     inconsistency_ratio: float = Config.HALLUCINATION_RATIO,
     evaluator_llm_bulk: Optional[Callable] = None,
 ) -> Dict[str, EvalReport]:
-    """运行完整评估流水线。
+    """Run the full evaluation pipeline.
 
     Args:
         queries: [{id, query, expected_value?, category?, type?}, ...]
-        nutrichat_responses: NutriCHAT 的响应（与 queries 等长）
+        nutrichat_responses: NutriCHAT's responses (same length as queries)
         baseline_responses: {baseline_name: [response_per_query, ...]}
-        evaluator_llm: 可选，score_responses(query, {name: text}) -> {name: {metric: score}}
-        selfcheck: 可选，compute_score(response, query) -> float
-        n_selfcheck_samples: SelfCheckGPT 采样数（废弃，用 n_selfcheck_values 代替）
-        n_selfcheck_values: 多 N 值列表，如 [5, 10, 20]
-        return_per_query: True 则返回 (reports, per_query_data)
-        step_traces: 可选，{method_name: [每条的 step 列表]}，用于 Faithfulness 评估
-        inconsistency_ratio: SelfCheck 按比例采样 (0.0-1.0)，1.0=全部
+        evaluator_llm: optional, score_responses(query, {name: text}) -> {name: {metric: score}}
+        selfcheck: optional, compute_score(response, query) -> float
+        n_selfcheck_samples: SelfCheckGPT sample count (deprecated; use n_selfcheck_values instead)
+        n_selfcheck_values: list of multiple N values, e.g. [5, 10, 20]
+        return_per_query: if True, return (reports, per_query_data)
+        step_traces: optional, {method_name: [step list per query]}, used for Faithfulness evaluation
+        inconsistency_ratio: proportion of SelfCheck sampling (0.0-1.0), 1.0=all
 
     Returns:
-        {method_name: EvalReport} 或 (reports, per_query_data)
+        {method_name: EvalReport} or (reports, per_query_data)
     """
     reports: Dict[str, EvalReport] = {}
     all_methods = [nutrichat_name] + list(baseline_responses.keys())
@@ -237,7 +237,7 @@ def run_evaluation_pipeline(
         for i, q in enumerate(queries)
     ]
 
-    # 1. Flesch Reading Ease（所有方法）
+    # 1. Flesch Reading Ease (all methods)
     if enable_flesch:
         for method in all_methods:
             for i, resp in enumerate(all_responses[method]):
@@ -246,7 +246,7 @@ def run_evaluation_pipeline(
                 if i < len(per_query_data):
                     per_query_data[i]["flesch"][method] = score
 
-    # 2. 容差精度（数值查询）
+    # 2. Tolerance accuracy (numeric queries)
     if enable_tolerance:
         for i, q in enumerate(queries):
             gt = q.get("expected_value")
@@ -263,12 +263,12 @@ def run_evaluation_pipeline(
                     per_query_data[i]["tolerance_p2"][method] = tol2
                     per_query_data[i]["tolerance_p5"][method] = tol5
 
-    # 3. EvaluatorLLM（如果提供，优先批量评分，回退到逐条评分）
+    # 3. EvaluatorLLM (if provided, prefer bulk scoring and fall back to per-query scoring)
     if evaluator_llm is not None or evaluator_llm_bulk is not None:
         print("--- EvaluatorLLM Scoring ---")
 
         if evaluator_llm_bulk is not None:
-            # 批量评分路径：每个 method 一次 API 调用评 N 条（batch_size=10）
+            # Bulk scoring path: one API call per method scores N queries (batch_size=10)
             for method in all_methods:
                 method_responses = all_responses[method]
                 if not method_responses:
@@ -291,7 +291,7 @@ def run_evaluation_pipeline(
                             }
                     print(f"  {method}: {len(bulk_scores)}/{len(queries)} scored (bulk)")
                 else:
-                    # Bulk 失败，回退到逐条评分
+                    # Bulk failed, fall back to per-query scoring
                     print(f"  {method}: bulk failed, falling back to per-query")
                     for i, q in enumerate(queries):
                         batch = {method: method_responses[i]}
@@ -310,7 +310,7 @@ def run_evaluation_pipeline(
                                 "scientific_depth": s.get("scientific_depth"),
                             }
         else:
-            # 逐条评分路径（原有逻辑）
+            # Per-query scoring path (original logic)
             from concurrent.futures import ThreadPoolExecutor, as_completed
 
             n_workers = min(len(queries), 4)
@@ -348,8 +348,8 @@ def run_evaluation_pipeline(
                     if sum(scored) % 20 == 0:
                         print(f"  Progress: {sum(scored)}/{len(queries)}")
 
-    # 4. SelfCheckGPT-NLI（支持按方法分配各自的采样模型 + inconsistency_ratio 按比例跳过）
-    #    按方法分组并行：每组内查询并行，方法间也并行
+    # 4. SelfCheckGPT-NLI (supports a per-method sampling model + proportional skipping via inconsistency_ratio)
+    #    Group by method and run in parallel: queries within a group run in parallel, methods run in parallel too
     if selfcheck is not None:
         n_vals = n_selfcheck_values or ([n_selfcheck_samples] if n_selfcheck_samples > 0 else None)
         if not n_vals:
@@ -361,7 +361,7 @@ def run_evaluation_pipeline(
             n_sc = 0 if _hr <= 0 else max(1, int(round(len(queries) * _hr)))
             sc_indices = sorted(random.sample(range(len(queries)), n_sc)) if n_sc > 0 else []
 
-            # 跳过定义查询：幻觉风险极低（直接从工具检索），节省 SelfCheck 开销
+            # Skip definition queries: hallucination risk is very low (retrieved directly from tools), saving SelfCheck cost
             _defn_indices = {i for i, q in enumerate(queries) if q.get("type") == "definition"}
             if _defn_indices:
                 sc_indices = [i for i in sc_indices if i not in _defn_indices]
@@ -465,9 +465,9 @@ def run_evaluation_pipeline(
 
 def format_report_table(reports: Dict[str, EvalReport],
                         cost_data: Optional[Dict[str, dict]] = None) -> str:
-    """生成 Markdown 格式的对比表格（可直接渲染）。
+    """Generate the comparison table in Markdown format (ready to render).
 
-    cost_data: 可选，提供后会在 Scored Metrics 表中追加 Avg Time(s) 列。
+    cost_data: optional; when provided, an Avg Time(s) column is appended to the Scored Metrics table.
     """
     lines = []
     lines.append("# Evaluation Results\n")
@@ -544,11 +544,11 @@ def format_report_table(reports: Dict[str, EvalReport],
         )
         diffs = []
         for key, label, reason in [
-            ("precision", "Precision", "评分返回None"),
-            ("inconsistency", "Inconsistency", "inconsistency_ratio抽样"),
-            ("tolerance_p2", "Tolerance", "仅数值查询"),
-            ("faithfulness", "Faithful(Num)", "仅调用工具查询"),
-            ("faithfulness_semantic", "Faithful(Sem)", "仅调用工具查询"),
+            ("precision", "Precision", "scoring returned None"),
+            ("inconsistency", "Inconsistency", "inconsistency_ratio sampling"),
+            ("tolerance_p2", "Tolerance", "numeric queries only"),
+            ("faithfulness", "Faithful(Num)", "tool-invoking queries only"),
+            ("faithfulness_semantic", "Faithful(Sem)", "tool-invoking queries only"),
         ]:
             ns = set()
             for r in reports.values():
@@ -562,13 +562,13 @@ def format_report_table(reports: Dict[str, EvalReport],
                 else:
                     diffs.append(f"{label}={min(ns)}-{max(ns)}({reason})")
         if diffs:
-            lines.append(f"\n> N=样本数（共{total}条查询）。{'；'.join(diffs)}。\n")
+            lines.append(f"\n> N=sample count (of {total} queries total). {'; '.join(diffs)}.\n")
 
     return "\n".join(lines)
 
 
 def _lookup_avg_time(method_name: str, cost_data: Dict[str, dict]) -> str:
-    """从 cost_data 中按方法名模糊匹配查找 Avg Time(s)。"""
+    """Look up Avg Time(s) from cost_data by fuzzy method-name matching."""
     if not cost_data:
         return "N/A"
     # Exact match first
@@ -590,7 +590,7 @@ def _lookup_avg_time(method_name: str, cost_data: Dict[str, dict]) -> str:
 
 def print_report_table(reports: Dict[str, EvalReport],
                        cost_data: Optional[Dict[str, dict]] = None):
-    """打印comparison table。"""
+    """Print the comparison table."""
     print(format_report_table(reports, cost_data=cost_data))
 
 
@@ -853,7 +853,7 @@ def format_breakdown_text(breakdown: dict) -> str:
 
 def _save_report_txt(reports: Dict[str, EvalReport], path: str,
                      cost_data: Optional[Dict[str, dict]] = None):
-    """将报告写入纯文本文件。"""
+    """Write the report to a plain-text file."""
     with open(path, "w", encoding="utf-8") as f:
         f.write(format_report_table(reports, cost_data=cost_data))
 
@@ -876,7 +876,7 @@ def _append_total_time(path: str, total_time_sec: float):
 
 
 def save_raw_responses(queries: List[dict], responses: Dict[str, List[str]], log_dir: str):
-    """保存所有模型的原始响应到 JSON。"""
+    """Save all raw model responses to JSON."""
     import datetime
     data = {
         "timestamp": datetime.datetime.now().isoformat(),
@@ -899,7 +899,7 @@ def save_raw_responses(queries: List[dict], responses: Dict[str, List[str]], log
     path = os.path.join(log_dir, "responses.json")
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
-    print(f"  responses.json       原始响应 ({len(queries)} 条 × {len(responses)} 个模型)")
+    print(f"  responses.json       raw responses ({len(queries)} queries × {len(responses)} models)")
 
 
 def save_report(reports: Dict[str, EvalReport], filepath: str,
@@ -907,15 +907,15 @@ def save_report(reports: Dict[str, EvalReport], filepath: str,
                 queries: Optional[List[dict]] = None,
                 breakdown: Optional[dict] = None,
                 total_time_sec: Optional[float] = None):
-    """导出评估结果，含可选的时间/成本数据和 per-query 评分明细。
+    """Export evaluation results, including optional time/cost data and per-query scoring detail.
 
-    total_time_sec: 脚本总执行时间（秒），追加到 report_table.md 底部。
+    total_time_sec: total script execution time (seconds), appended to the bottom of report_table.md.
     """
     if os.path.isdir(filepath) or os.path.basename(os.path.dirname(filepath)).startswith("log_"):
         log_dir = filepath if os.path.isdir(filepath) else os.path.dirname(filepath)
         os.makedirs(log_dir, exist_ok=True)
 
-        # 1. report.json — 汇总指标 + per-query 评分 + 时间成本
+        # 1. report.json — aggregate metrics + per-query scores + time and cost
         json_path = os.path.join(log_dir, "report.json")
         data = {name: r.summary() for name, r in reports.items()}
 
@@ -951,18 +951,18 @@ def save_report(reports: Dict[str, EvalReport], filepath: str,
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
-        # 2. report_table.md — 可读表格（Markdown），含运行时间
+        # 2. report_table.md — readable table (Markdown), including runtime
         txt_path = os.path.join(log_dir, "report_table.md")
         _save_report_txt(reports, txt_path, cost_data=cost_data)
         if total_time_sec is not None:
             _append_total_time(txt_path, total_time_sec)
 
-        # 3. cost_table.md — 成本时间明细
+        # 3. cost_table.md — cost and time detail
         if cost_data:
             cost_path = os.path.join(log_dir, "cost_table.md")
             _save_cost_table(cost_data, cost_path)
 
-        # 4. breakdown.csv — 按查询类型/工具类别分组（含 std + 全部指标）
+        # 4. breakdown.csv — grouped by query type / tool category (with std + all metrics)
         if breakdown:
             import csv
             _BD_METRICS = ["correctness", "precision", "scientific_depth", "flesch", "inconsistency"]
@@ -986,12 +986,12 @@ def save_report(reports: Dict[str, EvalReport], filepath: str,
                             w.writerow(row)
 
         print(f"\n[Evaluator] Results saved to {log_dir}/")
-        print(f"  report.json         指标汇总")
-        print(f"  report_table.md     可读表格")
+        print(f"  report.json         metric summary")
+        print(f"  report_table.md     readable table")
         if cost_data:
-            print(f"  cost_table.md       成本时间明细")
+            print(f"  cost_table.md       cost and time detail")
         if breakdown:
-            print(f"  breakdown.csv       查询类型/工具类别分组")
+            print(f"  breakdown.csv       grouped by query type / tool category")
     else:
         data = {name: r.summary() for name, r in reports.items()}
         if queries:

@@ -1,11 +1,11 @@
-"""API 调用重试工具（指数退避 + 自适应限流）。
+"""API call retry utilities (exponential backoff + adaptive rate limiting).
 
-重试参数从 config/settings.yaml 加载：
-  api.retry.max_attempts  — 最大重试次数
-  api.retry.min_wait      — 退避最小等待（秒）
-  api.retry.max_wait      — 退避最大等待（秒）
+Retry parameters are loaded from config/settings.yaml:
+  api.retry.max_attempts  — maximum number of retries
+  api.retry.min_wait      — minimum backoff wait (seconds)
+  api.retry.max_wait      — maximum backoff wait (seconds)
 
-用法:
+Usage:
     from src.retry import llm_retry
 
     @llm_retry
@@ -20,7 +20,7 @@ from openai import APIError, APITimeoutError, RateLimitError
 
 
 class _RateLimiter:
-    """全局 API 限流器：限制并发请求数 + 最小请求间隔。"""
+    """Global API rate limiter: caps concurrent requests + minimum request interval."""
 
     def __init__(self, max_concurrent: int = 6, min_interval: float = 0.15):
         self._semaphore = threading.Semaphore(max_concurrent)
@@ -40,7 +40,7 @@ class _RateLimiter:
         self._semaphore.release()
 
 
-# 全局限流器（6 并发，150ms 间隔，适配 SiliconFlow 速率限制）
+# Global rate limiter (6 concurrent, 150 ms interval, tuned for SiliconFlow rate limits)
 _rate_limiter = _RateLimiter(max_concurrent=6, min_interval=0.15)
 
 
@@ -105,7 +105,7 @@ def _get_llm_retry():
         return _make_retry()
 
 
-# 默认重试装饰器（懒加载 Config，避免 import 循环）
+# Default retry decorator (lazily loads Config to avoid an import cycle)
 _cached_retry_decorator = None
 
 
@@ -120,7 +120,7 @@ def llm_retry(func: Callable = None, **kwargs):
     return _cached_retry_decorator
 
 
-# 更保守的重试配置（用于采样等非关键路径）
+# More conservative retry configuration (for non-critical paths such as sampling)
 def _get_aggressive_retry():
     try:
         from src.config import Config

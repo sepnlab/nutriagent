@@ -38,9 +38,9 @@ def _load_local_override() -> dict:
         return {}
     except yaml.YAMLError as e:
         import sys
-        print(f"[WARNING] config.local.yaml 解析失败，所有本地配置将被忽略！", file=sys.stderr)
-        print(f"  YAML 错误: {e}", file=sys.stderr)
-        print(f"  路径: {path}", file=sys.stderr)
+        print(f"[WARNING] Failed to parse config.local.yaml; all local overrides will be ignored!", file=sys.stderr)
+        print(f"  YAML error: {e}", file=sys.stderr)
+        print(f"  Path: {path}", file=sys.stderr)
         return {}
 
 
@@ -73,15 +73,16 @@ if _LOCAL_OVERRIDE:
         if k not in _settings:
             _settings[k] = v  # new key
         elif isinstance(_settings[k], type(v)):
-            # 类型匹配 → 覆盖
+            # Type matches → override
             if isinstance(v, dict):
                 _settings[k] = deep_merge(_settings[k], v)
             else:
                 _settings[k] = v
         else:
-            # 类型不匹配 → 跳过并警告
-            # 特例：baselines 在 settings.yaml 是 dict（thinking_max_tokens），
-            # 在 config.local.yaml 是 list（--compare 过滤），两者独立消费，非真正冲突
+            # Type mismatch → skip and warn
+            # Special case: baselines is a dict in settings.yaml (thinking_max_tokens)
+            # and a list in config.local.yaml (--compare filtering); they are consumed
+            # independently, so this is not a real conflict
             if k != "baselines":
                 import sys
                 print(f"[WARNING] config.local.yaml: key '{k}' type mismatch "
@@ -100,12 +101,12 @@ _BASELINE_THINKING_MAX_TOKENS: int = int(
 _eval_file = _load_yaml("evaluate.yaml")
 if _LOCAL_OVERRIDE:
     _eval_file = deep_merge(_eval_file, _LOCAL_OVERRIDE)
-    # scoring_evaluate 优先级高于 scoring（实验专用覆盖）
+    # scoring_evaluate takes priority over scoring (experiment-specific override)
     if "scoring_evaluate" in _LOCAL_OVERRIDE:
         _eval_file["scoring"] = deep_merge(
             _eval_file.get("scoring", {}), _LOCAL_OVERRIDE["scoring_evaluate"]
         )
-    # 校验 merged scoring：拒掉 config.local.yaml 中的拼写错误
+    # Validate merged scoring: reject typos in config.local.yaml
     if "scoring" in _eval_file:
         from src.schemas import ScoringSettings
         ScoringSettings(**_eval_file["scoring"])
@@ -113,7 +114,7 @@ _eval_cfg = _eval_file.get("evaluation", {}) if _eval_file else {}
 _N_SELFCHECK_VALUES: list = _eval_cfg.get("n_selfcheck_values", [5, 10, 20])
 _N_SELFCHECK_GEN: int = _eval_cfg.get("n_selfcheck_gen_samples") or max(_N_SELFCHECK_VALUES)
 _N_SAMPLE_RATIO: Optional[float] = _eval_cfg.get("sample_ratio")
-# Priority: scoring.hallucination_ratio（local 覆盖）> evaluation.hallucination_ratio > settings.yaml > 1.0
+# Priority: scoring.hallucination_ratio (local override) > evaluation.hallucination_ratio > settings.yaml > 1.0
 _h_scoring = _eval_file.get("scoring", {}).get("hallucination_ratio") if _eval_file else None
 _HALLUCINATION_RATIO: float = float(
     _h_scoring if _h_scoring is not None
@@ -309,7 +310,7 @@ def _resolve_baseline_models() -> list:
     """Resolve baseline model configs: merge provider connection info + per-model overrides."""
     bl_cfg = _model_cfg.get("baselines", {})
     defaults = {**bl_cfg.get("_defaults", {})}
-    # 基线 max_tokens 默认继承 settings.yaml，确保 NutriAgent 与基线一致
+    # Baseline max_tokens inherits from settings.yaml by default, keeping NutriAgent and baselines consistent
     defaults["max_tokens"] = _MAX_TOKENS
     models_list = bl_cfg.get("models", [])
     _thinking_set = set(_LOCAL_OVERRIDE.get("thinking_baselines") or []) | _THINKING_INHERENT
@@ -503,10 +504,10 @@ class Config:
     }
 
 
-# ── 实验配置继承 ──────────────────────────────────────────
+# ── Experiment config inheritance ─────────────────────────
 #
-# 评估参数（n_selfcheck_values 等）默认值现已直接定义在
-# evaluate.yaml 的 evaluation: 段中，不再从 settings.yaml 继承。
+# Evaluation parameter defaults (n_selfcheck_values etc.) are now defined directly
+# in the evaluation: section of evaluate.yaml and are no longer inherited from settings.yaml.
 
 _INHERITANCE_MAP: dict = {
     "evaluate": {

@@ -1,7 +1,7 @@
 # Data and code access
 
 This repository is the public code and query release for the NutriAgent
-manuscript (v1.0.1). It is not a full data release. This file maps the
+manuscript (v1.0.2). It is not a full data release. This file maps the
 reproducibility items requested in the R4.10 review comment to their access
 status.
 

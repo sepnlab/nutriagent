@@ -1,7 +1,7 @@
-"""Token 用量追踪与成本计算。
+"""Token usage tracking and cost calculation.
 
-追踪每次 API 调用的 token 用量和耗时，
-结合 Config.PRICING_TABLE 计算预估成本。
+Tracks token usage and latency of every API call,
+and estimates cost using Config.PRICING_TABLE.
 """
 import time
 
@@ -24,15 +24,15 @@ def _warn_missing_pricing(model: str):
 
 
 def _resolve_pricing_key(model: str) -> str | None:
-    """查找定价 key，支持 {provider}::{model_id} 格式并回退到 bare model_id。
+    """Look up a pricing key, supporting the {provider}::{model_id} format with fallback to the bare model_id.
 
-    1. 精确匹配 model
-    2. 遍历 pricing table，查找以 ::{model_id} 结尾的 key
+    1. Exact match on model
+    2. Scan the pricing table for a key ending with ::{model_id}
     """
     pricing = Config.PRICING_TABLE
     if model in pricing:
         return model
-    # 回退：遍历所有 key，找以 ::{model_id} 结尾的匹配
+    # Fallback: scan all keys for one ending with ::{model_id}
     suffix = f"::{model}"
     for key in pricing:
         if key.endswith(suffix):
@@ -41,7 +41,7 @@ def _resolve_pricing_key(model: str) -> str | None:
 
 
 def get_model_cost(model: str, prompt_tokens: int, completion_tokens: int) -> float:
-    """计算单次 API 调用的预估成本（USD）。"""
+    """Compute the estimated cost (USD) of a single API call."""
     pricing = Config.PRICING_TABLE
     key = _resolve_pricing_key(model)
     if key is None:
@@ -55,13 +55,13 @@ def get_model_cost(model: str, prompt_tokens: int, completion_tokens: int) -> fl
 
 
 class UsageRecord:
-    """单次查询的用量记录。"""
+    """Usage record for a single query."""
 
     def __init__(self, model: str = ""):
         self.model = model
         self.prompt_tokens = 0
         self.completion_tokens = 0
-        self.elapsed = 0.0  # 秒
+        self.elapsed = 0.0  # seconds
 
     @property
     def total_tokens(self) -> int:
@@ -83,9 +83,9 @@ class UsageRecord:
 
 
 class CostTracker:
-    """多模型成本追踪器。
+    """Multi-model cost tracker.
 
-    使用示例：
+    Example usage:
         tracker = CostTracker()
         r1 = tracker.start("deepseek-ai/DeepSeek-V4-Flash")
         # ... API call ...
@@ -95,14 +95,14 @@ class CostTracker:
         # ... API call ...
         r2.finish(prompt_tokens=30, completion_tokens=60, elapsed=1.2)
 
-        summary = tracker.summary()  # 按模型汇总
+        summary = tracker.summary()  # aggregated per model
     """
 
     def __init__(self):
         self.records: list[UsageRecord] = []
 
     def record(self, model: str, prompt_tokens: int, completion_tokens: int, elapsed: float):
-        """记录一次 API 调用。"""
+        """Record one API call."""
         r = UsageRecord(model)
         r.prompt_tokens = prompt_tokens
         r.completion_tokens = completion_tokens
@@ -111,7 +111,7 @@ class CostTracker:
         return r
 
     def summary(self) -> dict:
-        """按模型汇总统计。"""
+        """Aggregate statistics per model."""
         from collections import defaultdict
         by_model: dict = defaultdict(lambda: {"calls": 0, "prompt_tokens": 0,
                                                "completion_tokens": 0, "total_time": 0.0})

@@ -212,10 +212,10 @@ def _batch_timeout(n: int, n_workers: int, query_timeout: int) -> int:
 
 def _run_queries(engine, queries: List[dict], label: str,
                   max_concurrent: int = None) -> tuple:
-    """运行查询，返回 (responses, cost_tracker, steps_data)。
+    """Run the queries and return (responses, cost_tracker, steps_data).
 
-    并行执行：每个线程创建独立 engine 实例（LangGraph 非线程安全），
-    线程数 = min(查询数, max_concurrent)。每条查询超时上限 = Config.API_TIMEOUT × 5。
+    Parallel execution: each thread creates its own engine instance (LangGraph is not thread-safe),
+    number of threads = min(number of queries, max_concurrent). Per-query timeout = Config.API_TIMEOUT × 5.
     """
     from concurrent.futures import ThreadPoolExecutor, as_completed as ac, TimeoutError as FutureTimeout
 
@@ -225,7 +225,7 @@ def _run_queries(engine, queries: List[dict], label: str,
         return [], CostTracker(), []
     n_workers = min(n, max_concurrent or Config.API_MAX_CONCURRENT)
 
-    # 每个线程创建独立 engine（共享 tools，独立 graph）
+    # Each thread creates its own engine (shared tools, independent graph)
     _engines = []
     for _ in range(n_workers):
         _engines.append(setup_engine(
@@ -322,7 +322,7 @@ def _run_queries(engine, queries: List[dict], label: str,
 
 
 def _save_step_traces(steps_data: List[dict], log_dir: str, suffix: str = ""):
-    """保存中间步骤到日志目录。"""
+    """Save the intermediate steps to the log directory."""
     filename = f"step_traces{suffix}.json"
     filepath = os.path.join(log_dir, filename)
     with open(filepath, "w", encoding="utf-8") as f:
@@ -331,7 +331,7 @@ def _save_step_traces(steps_data: List[dict], log_dir: str, suffix: str = ""):
 
 
 def _preload_models():
-    """预加载 NLI + Embedding 模型（并行），避免评估时冷启动。"""
+    """Preload the NLI + Embedding models (in parallel) to avoid cold starts during evaluation."""
     from concurrent.futures import ThreadPoolExecutor, as_completed
     from src.logger import get_logger
     logger = get_logger("preload")
@@ -420,7 +420,7 @@ def run_evaluation(engine, queries_file=None, query_set="all", agent_mode="singl
             verbose=engine.verbose, max_tokens=engine.max_tokens,
             rag_enabled=engine.rag_enabled, mode="single",
         )
-        # both 模式下减半并发，避免 API 429 限流
+        # Halve concurrency in both mode to avoid API 429 rate limits
         _half_concurrent = max(1, Config.API_MAX_CONCURRENT // 2)
 
         def _run_both_mode(mode_name: str, eng) -> tuple:
@@ -698,7 +698,7 @@ def run_comparison(engine, queries_file=None, query_set="all", detailed=False,
                 verbose=engine.verbose, max_tokens=engine.max_tokens,
                 rag_enabled=engine.rag_enabled, mode="single",
             )
-            # both 模式下减半并发，避免 API 429 限流
+            # Halve concurrency in both mode to avoid API 429 rate limits
             _half_concurrent = max(1, Config.API_MAX_CONCURRENT // 2)
 
             def _run_both_mode(mode_label: str, eng) -> tuple:
@@ -1192,7 +1192,7 @@ def _validate_all_configs():
     all_ok = True
     _has_warn = False
 
-    # ── 1. YAML 解析 + Schema 校验 ─────────────────────────────
+    # ── 1. YAML parsing + schema validation ───────────────────
     print("\n  ── Config files ────────────────────────────────────")
     import yaml
     from pydantic import ValidationError
@@ -1386,11 +1386,11 @@ def _validate_all_configs():
 
     print()
     if all_ok:
-        print("配置文件、资源文件、API key 校验全部通过。")
+        print("Configuration files, resource files, and API keys all passed validation.")
     elif _has_warn:
-        print("存在警告，但不影响运行。建议修复后重试。")
+        print("Warnings present, but they do not affect execution. Fixing them is recommended.")
     else:
-        print("存在错误，请修复后重试。")
+        print("Errors present. Please fix them and retry.")
     return all_ok
 
 
@@ -1491,7 +1491,7 @@ def main():
                               "breakdown", "scoring", "categories", "thinking_baselines"}
                 relevant_overrides = {k: v for k, v in _LOCAL_OVERRIDE.items() if k in _EVAL_KEYS}
                 data = deep_merge(data, relevant_overrides)
-                # scoring_evaluate 合并进 scoring（与 config.py 保持一致）
+                # scoring_evaluate merged into scoring (consistent with config.py)
                 sc_ev = _LOCAL_OVERRIDE.get("scoring_evaluate")
                 if sc_ev:
                     data["scoring"] = deep_merge(
@@ -1528,16 +1528,16 @@ def main():
                     _eval_baselines.append(m)
     _categories = eval_cfg.get("categories") if eval_cfg else None
     _scoring = eval_cfg.get("scoring", {}) if eval_cfg else {}
-    # --compare 可单独覆盖评分开关（config.local.yaml → scoring_compare 段）
+    # --compare can override scoring switches separately (config.local.yaml → scoring_compare section)
     if args.compare and eval_cfg:
         from src.config import deep_merge
         _scoring_cmp = eval_cfg.get("scoring_compare")
         if _scoring_cmp:
             _merged = deep_merge(dict(_scoring), _scoring_cmp)
             from src.schemas import ScoringSettings
-            ScoringSettings(**_merged)  # 校验：reject unknown fields
+            ScoringSettings(**_merged)  # validation: reject unknown fields
             _scoring = _merged
-    # 每个命令可独立的 sample_ratio（从 scoring 段读取）
+    # Per-command sample_ratio (read from the scoring section)
     _sample_ratio = _scoring.get("sample_ratio") if isinstance(_scoring, dict) else None
 
     # --latest: show most recent log and exit
@@ -1599,12 +1599,12 @@ def main():
 
     from src.config import Config
 
-    # --quick: dev mode, 使用 scoring.*.quick 段配置（config.local.yaml 可自定义）
+    # --quick: dev mode, uses the scoring.*.quick section (customizable in config.local.yaml)
     if args.quick:
         from src.config import deep_merge
         _quick_cfg = _scoring.get("quick") or {}
         _scoring = deep_merge(dict(_scoring), _quick_cfg)
-        # sample_ratio 优先从 quick 段取，回退到合并后的 scoring 顶层
+        # sample_ratio is taken from the quick section first, falling back to the merged scoring top level
         _quick_sr = _quick_cfg.get("sample_ratio") or _scoring.get("sample_ratio")
         if _quick_sr is not None:
             Config.EVAL_SAMPLE_RATIO = _quick_sr
@@ -1613,7 +1613,7 @@ def main():
     # ── Config validation for experiment commands ──────────────
     if args.evaluate or args.compare or args.ablation or args.ablation_dim or args.score_from or args.ablation_to_compare:
         if not _validate_all_configs():
-            print("配置校验失败，请修复后重试。")
+            print("Configuration validation failed. Please fix the issues and retry.")
             return
 
     if args.build_db or args.force_db:
@@ -1667,7 +1667,7 @@ def main():
     elif args.ablation or args.ablation_dim:
         from src.evaluation.ablation import run_ablation
         from src.config import _LOCAL_OVERRIDE
-        # Ablation 也支持 --quick（当时 _scoring 为空未能注入 sample_ratio，在此补上）
+        # Ablation also supports --quick (at that point _scoring was empty and sample_ratio was not injected; added here)
         if args.quick and _LOCAL_OVERRIDE:
             _quick_sr = (_LOCAL_OVERRIDE.get("scoring_ablation") or {}).get("quick", {}).get("sample_ratio")
             if _quick_sr is not None:

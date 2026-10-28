@@ -1,26 +1,26 @@
-# NutriCHAT 词嵌入 + NLI 模型配置
+# NutriCHAT embedding + NLI model configuration
 #
-# provider: local（默认）或 siliconflow
+# provider: local (default) or siliconflow
 provider: local
 
-# 本地模型设置（provider: local 时生效）
+# Local model settings (used when provider: local)
 local:
   model_path: ./models/Qwen3-Embedding-0.6B
   device: cuda
 
-  # NLI 模型（SelfCheckGPT 使用的跨编码器）
-  # model_path: 本地路径，或 HuggingFace 模型名
-  # device: 默认继承 embedding 的 device，可单独设置
+  # NLI model (the cross-encoder used by SelfCheckGPT)
+  # model_path: local path, or a HuggingFace model name
+  # device: inherits the embedding device by default; can be set separately
   nli:
     model_path: ./models/mdeberta-v3-mnli-xnli
     device: cuda
 
-# SiliconFlow API 设置（provider: siliconflow 时生效）
-# API key 复用 .env 中的 SILICONFLOW_API_KEY
+# SiliconFlow API settings (used when provider: siliconflow)
+# The API key is reused from SILICONFLOW_API_KEY in .env
 siliconflow:
   default_model: Qwen/Qwen3-Embedding-8B
-  # 可选模型（用 default_model 切换）：
-  # - Qwen/Qwen3-Embedding-8B:   最高质量，8B 参数，1024 维
-  # - Qwen/Qwen3-Embedding-4B:   平衡方案，4B 参数，1024 维
-  # - Qwen/Qwen3-Embedding-0.6B: 轻量级（与本地模型同规格）
-  # - netease-youdao/bce-embedding-base_v1: 网易有道 BCE 嵌入，768 维
+  # Optional models (switch with default_model):
+  # - Qwen/Qwen3-Embedding-8B:   highest quality, 8B parameters, 1024 dimensions
+  # - Qwen/Qwen3-Embedding-4B:   balanced option, 4B parameters, 1024 dimensions
+  # - Qwen/Qwen3-Embedding-0.6B: lightweight (same spec as the local model)
+  # - netease-youdao/bce-embedding-base_v1: NetEase Youdao BCE embedding, 768 dimensions

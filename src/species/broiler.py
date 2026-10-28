@@ -6,7 +6,7 @@ from src.species.base import SpeciesHandler
 class BroilerHandler(SpeciesHandler):
     key = "broiler"
 
-    # ── 元数据 ──────────────────────────────────────────────
+    # ── Metadata ────────────────────────────────────────────
     display_name = "Broiler (meat-type chicken)"
     breeds = (
         "Ross 308, Ross 708, Cobb 500, "
@@ -16,7 +16,7 @@ class BroilerHandler(SpeciesHandler):
     phases = "Starter → Grower → Finisher → Withdrawal (conventional); extended cycles (63-90d) for yellow-feathered"
     metrics = "Body weight, ADG, FCR, feed intake, mortality, processing yield, breast meat, feather color, meat quality"
 
-    # ── 性能管理 ────────────────────────────────────────────
+    # ── Performance management ──────────────────────────────
     performance_breed_column = "Genetic_Line"
     performance_age_column = "Day"
     performance_age_field = "day"
@@ -54,7 +54,7 @@ class BroilerHandler(SpeciesHandler):
             "Input: genetic line, sex (optional), day (optional), parameter (optional)."
         )
 
-    # ── 营养需要量 ────────────────────────────────────────────
+    # ── Nutrient requirements ───────────────────────────────
     nutrient_breed_column = "Genetic_Line"
     nutrient_breed_label = "Broiler genetic lines"
     nutrient_available_breeds = "Ross 308, Ross 708, Cobb 500, Shengze 901, Guangming 2, Wode 188, Qingyuan Partridge, Sanhuang, Crossbred 817"

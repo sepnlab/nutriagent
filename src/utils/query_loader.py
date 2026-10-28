@@ -1,6 +1,6 @@
-"""统一的评估查询加载器。
+"""Unified evaluation query loader.
 
-整合 main.py 和 ablation.py 中的三份重复查询加载逻辑。
+Consolidates the three duplicated query-loading implementations in main.py and ablation.py.
 """
 import json
 import os
@@ -8,7 +8,7 @@ from typing import Dict, List, Optional
 
 from src.config import Config
 
-# 中文品类 → 基础英文品类映射（整数采样模式下归并，避免中文品类被当作独立分层）
+# Chinese-category → base English-category mapping (merged in integer-sampling mode so Chinese categories are not treated as separate strata)
 _CN_CATEGORY_MAP: Dict[str, str] = {
     "Chinese White-Feathered Broiler Performance": "Performance Management",
     "Chinese Yellow-Feathered Broiler Performance": "Performance Management",
@@ -20,12 +20,12 @@ _CN_CATEGORY_MAP: Dict[str, str] = {
 
 
 def _load_single(filepath: str) -> List[dict]:
-    """从 JSON 文件加载查询并展平 category 字段。
+    """Load queries from a JSON file and flatten the category field.
 
-    自动为缺少 language 字段的查询推断语言：
-    - id 以 CN- 开头 → zh
-    - 查询含中文字符 → zh
-    - 其他 → en
+    Language is inferred automatically for queries that lack a language field:
+    - id starting with CN- → zh
+    - query contains Chinese characters → zh
+    - otherwise → en
     """
     import re
     with open(filepath, "r", encoding="utf-8") as f:
@@ -47,7 +47,7 @@ def _load_single(filepath: str) -> List[dict]:
 
 
 def _normalize_categories(queries: List[dict]) -> None:
-    """就地将中文品类名映射到基础英文品类（整数采样用）。"""
+    """In-place mapping of Chinese category names to base English categories (used for integer sampling)."""
     for q in queries:
         mapped = _CN_CATEGORY_MAP.get(q.get("category", ""))
         if mapped is not None:
@@ -60,33 +60,33 @@ def load_queries(
     sample_ratio: Optional[float] = None,
     categories: Optional[List[str]] = None,
 ) -> List[dict]:
-    """加载评估查询集，支持中文合并 + 分层采样。
+    """Load the evaluation query set, supporting Chinese merging + stratified sampling.
 
     Args:
-        queries_file: JSON 文件路径。为 None 时从 Config.EVALUATION_QUERIES_FILE 读取。
-        query_set: "all" / "chinese" / "western"。chinese 仅保留 id 以 CN- 开头的查询。
-        sample_ratio: 传给 stratified_sample，None=不采样，<1=比例模式，>=1=每类 N 条。
-        categories: 可选白名单，只保留指定 category。
+        queries_file: JSON file path. Read from Config.EVALUATION_QUERIES_FILE when None.
+        query_set: "all" / "chinese" / "western". chinese keeps only queries whose id starts with CN-.
+        sample_ratio: passed to stratified_sample; None=no sampling, <1=proportional mode, >=1=N per category.
+        categories: optional whitelist; only keep the specified categories.
 
     Returns:
-        查询 dict 列表，每个 dict 包含 query、category、id、expected_value 等字段。
+        A list of query dicts; each dict contains query, category, id, expected_value etc.
     """
     filepath = queries_file or Config.EVALUATION_QUERIES_FILE
 
-    # 1. 加载指定文件
+    # 1. Load the specified file
     queries = _load_single(filepath)
 
-    # 2. 按 query_set 过滤（优先用 language 字段，回退到 id 前缀）
+    # 2. Filter by query_set (prefer the language field, fall back to the id prefix)
     if query_set == "chinese":
         queries = [q for q in queries if q.get("language") == "zh" or q.get("id", "").startswith("CN-")]
     elif query_set == "western":
         queries = [q for q in queries if q.get("language") == "en" and not q.get("id", "").startswith("CN-")]
 
-    # 4. 整数采样模式下，将中文品类归并到基础英文品类
+    # 4. In integer-sampling mode, merge Chinese categories into base English categories
     if sample_ratio is not None and sample_ratio >= 1:
         _normalize_categories(queries)
 
-    # 5. 分层采样 + category 过滤
+    # 5. Stratified sampling + category filtering
     if sample_ratio is not None or categories is not None:
         from src.utils.sampling import stratified_sample
         queries = stratified_sample(queries, ratio=sample_ratio, categories=categories)

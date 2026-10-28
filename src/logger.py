@@ -1,6 +1,6 @@
-"""统一日志配置。
+"""Unified logging configuration.
 
-用法:
+Usage:
     from src.logger import get_logger
     logger = get_logger(__name__)
     logger.info("...")
@@ -12,7 +12,7 @@ import sys
 
 
 def setup_logging(level: int = logging.INFO):
-    """初始化日志格式和级别。在 main() 入口处调用一次。"""
+    """Initialize the log format and level. Call once at the main() entry point."""
     logging.basicConfig(
         level=level,
         format="%(asctime)s [%(levelname)s] %(message)s",
@@ -23,5 +23,5 @@ def setup_logging(level: int = logging.INFO):
 
 
 def get_logger(name: str) -> logging.Logger:
-    """获取模块级 logger。"""
+    """Get a module-level logger."""
     return logging.getLogger(name)

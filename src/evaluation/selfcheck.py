@@ -28,19 +28,19 @@ class SelfCheckGPT:
     For each main response (T=0), generates N stochastic samples (T=1),
     then checks each sentence against sampled passages using NLI.
 
-    NLI 模型（CrossEncoder）在类级别共享，避免每个实例在 GPU 上独立加载一份。
+    The NLI model (CrossEncoder) is shared at class level so each instance does not load its own copy on the GPU.
 
     Args:
-        device: NLI 推理设备
-        batch_size: NLI batch 大小
-        sample_model: T=1 采样用的模型名（None=用 Config.SELFCHECK_MODEL）
-        sample_base_url: 采样 API 地址（None=用 Config.SELFCHECK_BASE_URL）
-        sample_api_key: 采样 API key（None=用 Config.SELFCHECK_API_KEY）
+        device: NLI inference device
+        batch_size: NLI batch size
+        sample_model: model name used for T=1 sampling (None = use Config.SELFCHECK_MODEL)
+        sample_base_url: sampling API base URL (None = use Config.SELFCHECK_BASE_URL)
+        sample_api_key: sampling API key (None = use Config.SELFCHECK_API_KEY)
     """
 
-    _shared_nli_model = None  # 类级别共享 GPU NLI 模型
+    _shared_nli_model = None  # class-level shared GPU NLI model
     _shared_nli_device = None
-    _sample_cache: dict = {}  # 类级别采样缓存：(query, model, n) → samples
+    _sample_cache: dict = {}  # class-level sampling cache: (query, model, n) → samples
     _sample_cache_max = 2048
 
     def __init__(self, device: str = "cpu", batch_size: int = 32,
@@ -60,7 +60,7 @@ class SelfCheckGPT:
     def _load_model(self):
         if self._nli_model is not None:
             return
-        # 使用类级别共享模型（GPU 只加载一次）
+        # Use the class-level shared model (loaded on the GPU only once)
         if SelfCheckGPT._shared_nli_model is not None and SelfCheckGPT._shared_nli_device == self.device:
             self._nli_model = SelfCheckGPT._shared_nli_model
             return
@@ -84,7 +84,7 @@ class SelfCheckGPT:
                     import torch as _torch
                     model = CrossEncoder(model_name, device=self.device, model_kwargs={"torch_dtype": _torch.float32})
                     logger.info("Loaded NLI model %s (%.1fs)", model_name, time.time() - t0)
-                    # 缓存到类级别供其他实例复用
+                    # Cache at class level so other instances can reuse it
                     SelfCheckGPT._shared_nli_model = model
                     SelfCheckGPT._shared_nli_device = self.device
                     self._nli_model = model
@@ -117,14 +117,15 @@ class SelfCheckGPT:
         Uses the SelfCheckGPT model from config (temperature=1.0) to generate
         diverse completions for inconsistency detection.
 
-        可用实例级 sample_model/base_url/api_key 覆盖全局 Config 的设置，
-        这样不同模型可以用各自对应的采样模型（而非全用同一个）。
+        Instance-level sample_model/base_url/api_key can override the global Config settings,
+        so different models can use their own sampling model (instead of all sharing one).
 
-        自适应并发：先尝试 20 并发，API 返回 503/429 等服务器错误时
-        自动降级到 10 → 5，避免高并发加剧 API 过载。
+        Adaptive concurrency: start with 20 concurrent requests, then automatically
+        degrade to 10 → 5 when the API returns server errors such as 503/429,
+        avoiding extra load on an already overloaded API.
 
-        采样结果按 (query, model, n) 缓存到类级别，同一查询在不同
-        消融变体中复用同一批采样，避免重复 API 调用。
+        Sampling results are cached at class level by (query, model, n), so the same
+        query reuses the same samples across ablation variants and avoids duplicate API calls.
         """
         from openai import OpenAI
 

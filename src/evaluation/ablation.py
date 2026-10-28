@@ -1,27 +1,27 @@
-"""NutriCHAT 消融实验框架 — 聚焦 Multi-Agent 架构
+"""NutriCHAT ablation experiment framework — focused on the Multi-Agent architecture
 
-核心创新点：Multi-Agent 系统（Router → Specialists → Synthesis）
-消融维度围绕多智能体架构设计。
+Core contribution: a Multi-Agent system (Router → Specialists → Synthesis)
+The ablation dimensions are designed around the multi-agent architecture.
 
-Dimension 1: Agent 架构消融
-  Single ReAct vs Multi-Agent（核心对比）
-  验证多智能体架构的价值
+Dimension 1: Agent architecture ablation
+  Single ReAct vs Multi-Agent (core comparison)
+  Validates the value of the multi-agent architecture
 
-Dimension 2: Specialist 消融
-  逐个移除 specialist 测量边际贡献
-  理解每个专家的不可替代性
+Dimension 2: Specialist ablation
+  Remove one specialist at a time to measure marginal contribution
+  Understand the irreplaceability of each specialist
 
-Dimension 3: Router 策略消融
-  LLM Router（当前） vs Keyword Fallback vs Broadcast（全调）
-  验证路由精度对性能的影响
+Dimension 3: Router strategy ablation
+  LLM Router (current) vs Keyword Fallback vs Broadcast (invoke all)
+  Validates the effect of routing precision on performance
 
-Dimension 4: RAG 消融（Multi-Agent 上下文）
+Dimension 4: RAG ablation (Multi-Agent context)
   Multi-Agent with RAG vs without RAG
-  测试 RAG 在多智能体架构中的贡献
+  Tests RAG's contribution within the multi-agent architecture
 
-用法:
-    python main.py --ablation                 # 全部维度
-    python main.py --ablation --ablation-dim architecture  # 单维度
+Usage:
+    python main.py --ablation                 # all dimensions
+    python main.py --ablation --ablation-dim architecture  # single dimension
     python main.py --ablation --ablation-dim specialist
     python main.py --ablation --ablation-dim synthesis
     python main.py --ablation --ablation-dim llm_backbone
@@ -40,30 +40,30 @@ from src.logger import get_logger
 from src.tools import get_all_tools, TOOL_DOMAINS
 
 
-# ── 路径 ────────────────────────────────────────────────────
+# ── Paths ───────────────────────────────────────────────────
 
 _PROJECT_ROOT = os.path.normpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 )
 
 
-# ── 查询加载 ────────────────────────────────────────────────
+# ── Query loading ───────────────────────────────────────────
 
 
-# ── 变体运行器 ──────────────────────────────────────────────
+# ── Variant runners ─────────────────────────────────────────
 
-# ── 全局响应缓存：相同 query×variant 复用（跨维度共享 + 磁盘持久化） ──
-# 嵌套结构：{variant_name: {query_text: response, ...}, ...}，同时作为 responses.json
+# ── Global response cache: reuse the same query×variant (shared across dimensions + persisted to disk) ──
+# Nested structure: {variant_name: {query_text: response, ...}, ...}, also used as responses.json
 import threading as _threading
 _ABLATION_RESPONSE_CACHE: Dict[str, Dict[str, str]] = {}
 _ABLATION_CACHE_FILE: str = ""  # set by run_ablation
 _ABLATION_CACHE_LOCK = _threading.Lock()
 
 from src.config import Config as _Cfg
-# 并发查询数：减半避免嵌套线程池导致 429 限流
-# （外层变体并行 + 内层查询并行，总并发 = 外层 × 内层）
+# Concurrent query count: halved to avoid 429 rate limits from nested thread pools
+# (outer variants in parallel + inner queries in parallel; total concurrency = outer × inner)
 _ABLATION_MAX_WORKERS = max(1, _Cfg.API_MAX_CONCURRENT // 2)
-_ABLATION_QUERY_TIMEOUT = 120  # 单查询超时（秒）
+_ABLATION_QUERY_TIMEOUT = 120  # per-query timeout (seconds)
 
 
 def _load_disk_cache():
@@ -107,14 +107,14 @@ def _save_disk_cache():
 def _run_concurrent(queries: List[dict], worker_fn, desc: str,
                     variant_name: str = "",
                     return_steps: bool = False):
-    """通用并发查询执行器，带缓存 + 超时。
+    """Generic concurrent query executor with caching + timeout.
 
     Args:
-        queries: 查询列表
-        worker_fn: (query_dict) -> str 或 (query_dict) -> (str, list)
-        desc: tqdm 描述文字
-        variant_name: 变体名，用于缓存键
-        return_steps: True 则 worker_fn 返回 (response, steps_list)
+        queries: query list
+        worker_fn: (query_dict) -> str or (query_dict) -> (str, list)
+        desc: tqdm description text
+        variant_name: variant name, used as the cache key
+        return_steps: if True, worker_fn returns (response, steps_list)
 
     Returns:
         return_steps=False: List[str]
@@ -168,7 +168,7 @@ def _run_concurrent(queries: List[dict], worker_fn, desc: str,
 
 
 def _warmup_llm():
-    """预热 LLM + NLI + Embedding 模型，避免冷启动拖慢首条查询。"""
+    """Warm up the LLM + NLI + Embedding models so cold starts do not slow down the first query."""
     logger = get_logger("ablation")
     from concurrent.futures import ThreadPoolExecutor
 
@@ -219,7 +219,7 @@ def _run_single_react(queries: List[dict], tools=None, verbose: bool = False,
                        variant_name: str = "", model: str = None,
                        base_url: str = None, api_key: str = None,
                        extra_body: dict = None):
-    """单 ReAct Agent 基线"""
+    """Single ReAct Agent baseline"""
     from src.agent.react_agent import ReActAgent
 
     if tools is None:
@@ -244,7 +244,7 @@ def _run_multi_agent(queries: List[dict], tools=None, rag_enabled: bool = True,
                      validation_mode: str = "auto",
                      synthesis_mode: str = "synthesis",
                      single_pass: bool = False):
-    """完整 Multi-Agent 架构（Router → Specialists → Synthesis）"""
+    """Full Multi-Agent architecture (Router → Specialists → Synthesis)"""
     from src.agent.multi_agent_engine import MultiAgentEngine
 
     if tools is None:
@@ -271,7 +271,7 @@ def _run_multi_agent_no_rag(queries: List[dict], tools=None, verbose: bool = Fal
                               synthesis_enabled: bool = True,
                               base_url: str = None, api_key: str = None,
                               extra_body: dict = None):
-    """Multi-Agent 无 RAG（Dimension 4 消融）"""
+    """Multi-Agent without RAG (Dimension 4 ablation)"""
     return _run_multi_agent(queries, tools=tools, rag_enabled=False, verbose=verbose,
                              variant_name=variant_name, model=model,
                              synthesis_enabled=synthesis_enabled,
@@ -284,7 +284,8 @@ def _run_multi_agent_no_tools(queries: List[dict], tools=None, verbose: bool = F
                               synthesis_enabled: bool = True,
                               base_url: str = None, api_key: str = None,
                               extra_body: dict = None):
-    """Multi-Agent 无工具: specialists 纯 LLM 回答，验证路由+合成的边际贡献。
+    """Multi-Agent without tools: specialists answer from parametric knowledge only,
+    validating the marginal contribution of routing + synthesis.
 
     This is NOT the no-ReAct variant — it removes tools entirely. It used to be
     mislabelled "Multi-Agent (no ReAct)", which also happened to be dispatched
@@ -312,7 +313,7 @@ def _run_multi_agent_single_pass(queries: List[dict], tools=None,
                                  synthesis_enabled: bool = True,
                                  base_url: str = None, api_key: str = None,
                                  extra_body: dict = None):
-    """Multi-Agent 真 no-ReAct: 每个 specialist 只做一次工具调用，然后直接作答。
+    """Multi-Agent true no-ReAct: each specialist makes exactly one tool call, then answers directly.
 
     This is the true "no iterative reasoning" control: the specialist may call
     exactly one tool, receives that observation, and must answer without any
@@ -509,14 +510,14 @@ def _run_multi_agent_no_specialist(queries: List[dict], exclude: str,
                                     synthesis_enabled: bool = True,
                                     base_url: str = None, api_key: str = None,
                                     extra_body: dict = None):
-    """Multi-Agent 移除指定 specialist（Dimension 2 消融）
+    """Multi-Agent with the given specialist removed (Dimension 2 ablation)
 
-    只运行与该 specialist 相关的查询（按 category 匹配），
-    无关查询直接复用 Full (4 Specialists) 的缓存结果。
+    Only queries related to that specialist are run (matched by category);
+    unrelated queries directly reuse the cached results of Full (4 Specialists).
     """
     from src.agent.multi_agent_engine import MultiAgentEngine
 
-    # exclude → category prefix mapping（含中文品类映射）
+    # exclude → category prefix mapping (includes the Chinese category mapping)
     _EXCLUDE_CAT_MAP = {
         "feed": "Feed Ingredient Bank",
         "nutrition": "Nutrient Requirements",
@@ -603,7 +604,7 @@ def _run_multi_agent_keyword_router(queries: List[dict], tools=None,
                                     synthesis_enabled: bool = True,
                                     base_url: str = None, api_key: str = None,
                                     extra_body: dict = None) -> List[str]:
-    """Multi-Agent 用关键词路由替代 LLM 路由（Dimension 3 消融）"""
+    """Multi-Agent using keyword routing instead of LLM routing (Dimension 3 ablation)"""
     from src.agent.multi_agent_engine import MultiAgentEngine
     from src.agent.router_agent import RouterAgent
 
@@ -615,7 +616,7 @@ def _run_multi_agent_keyword_router(queries: List[dict], tools=None,
                               base_url=base_url, api_key=api_key,
                               extra_body=extra_body)
 
-    # 创建只使用 keyword fallback 的路由器
+    # Create a router that only uses keyword fallback
     class KeywordOnlyRouter(RouterAgent):
         def route(self, query):
             return self._keyword_fallback(query)
@@ -637,7 +638,7 @@ def _run_multi_agent_broadcast(queries: List[dict], tools=None,
                                 synthesis_enabled: bool = True,
                                 base_url: str = None, api_key: str = None,
                                 extra_body: dict = None):
-    """Multi-Agent 广播模式：不路由，全调 4 个 specialist（Dimension 3 消融）"""
+    """Multi-Agent broadcast mode: no routing, invoke all 4 specialists (Dimension 3 ablation)"""
     from src.agent.multi_agent_engine import MultiAgentEngine
     from src.agent.base_agent import RouterDecision
 
@@ -673,9 +674,9 @@ def _run_multi_agent_no_synthesis(queries: List[dict], tools=None,
                                    model: str = None,
                                    base_url: str = None, api_key: str = None,
                                    extra_body: dict = None):
-    """Multi-Agent 跳过 Synthesis 层，直接拼接 Specialist 输出。
+    """Multi-Agent skipping the Synthesis layer and concatenating specialist outputs directly.
 
-    Used in the Synthesis 策略消融 dimension to measure the marginal
+    Used in the synthesis-strategy ablation dimension to measure the marginal
     contribution of the SynthesisAgent's cross-validation + merging step.
     """
     return _run_multi_agent(queries, tools=tools, rag_enabled=True, verbose=verbose,
@@ -749,7 +750,7 @@ def _resolve_factorial_runner(name: str, mapping: dict, dimension: str):
     return mapping[name]
 
 
-# ── 评估 ────────────────────────────────────────────────────
+# ── Evaluation ──────────────────────────────────────────────
 
 def _run_scoring(queries: List[dict], all_responses: Dict[str, List[str]],
                  evaluator_llm=None, evaluator_llm_bulk=None, selfcheck=None,
@@ -761,8 +762,8 @@ def _run_scoring(queries: List[dict], all_responses: Dict[str, List[str]],
     """Run EvaluatorLLM + tolerance + Flesch + SelfCheck + Faithfulness.
 
     Delegates to run_evaluation_pipeline() to avoid code duplication.
-    SelfCheck 在消融中默认跳过（太慢），仅在传入 selfcheck_fn 时启用。
-    step_traces 用于 Faithfulness 评估。
+    SelfCheck is skipped by default in ablations (too slow); it is enabled only when selfcheck_fn is passed.
+    step_traces is used for Faithfulness evaluation.
     evaluator_llm_bulk (score_bulk) is preferred — absolute scoring, batched.
     evaluator_llm (score_responses) is the fallback.
     """
@@ -819,7 +820,7 @@ def _try_get_scorers():
     return evaluator_fn, evaluator_bulk_fn, selfcheck_fn
 
 
-# ── 表格输出 ──────────────────────────────────────────────
+# ── Table output ────────────────────────────────────────────
 
 def _val(s: dict, key: str):
     """Extract (mean, std, n) from a report summary dict."""
@@ -911,7 +912,7 @@ def _print_table(title: str, results: Dict[str, dict], metrics: List[str],
         print(f"  {note}")
 
 
-# ── YAML 配置加载 ──────────────────────────────────────────
+# ── YAML configuration loading ──────────────────────────────
 
 def _load_ablation_config() -> dict:
     """Load ablation.yaml, merge config.local.yaml scoring + variant overrides."""
@@ -924,34 +925,34 @@ def _load_ablation_config() -> dict:
 
     # Merge local overrides from config.local.yaml
     if _LOCAL_OVERRIDE:
-        # 1. Scoring: scoring_ablation > scoring（实验专用 > 统一覆盖）
+        # 1. Scoring: scoring_ablation > scoring (experiment-specific > global override)
         base = _LOCAL_OVERRIDE.get("scoring_ablation") or _LOCAL_OVERRIDE.get("scoring")
         if base:
             data["scoring"] = deep_merge(data.get("scoring", {}), base)
 
         # 2. Ablation dimension variants: name-based merge + append
-        # 支持两种格式：
-        #   dict 格式（传统）: ablation.llm_backbone.variants: [...]
-        #   list 格式（扁平）: ablation.llm_backbone: [...]  ← 推荐
+        # Two formats are supported:
+        #   dict format (legacy): ablation.llm_backbone.variants: [...]
+        #   list format (flat):   ablation.llm_backbone: [...]  ← recommended
         local_abl = _LOCAL_OVERRIDE.get("ablation")
         if local_abl and isinstance(local_abl, dict):
             for dim_key, dim_cfg in local_abl.items():
                 if dim_key == "dimensions":
-                    continue  # 维度过滤参数，不是消融维度
+                    continue  # dimension-filter parameter, not an ablation dimension
                 if dim_key not in data:
                     raise ValueError(
                         f"Unknown ablation dimension '{dim_key}' in config.local.yaml. "
                         f"Available: {list(data.keys())}"
                     )
                 if isinstance(dim_cfg, list):
-                    # 扁平格式：完整替换 variants 列表（config.local.yaml 全权控制）
+                    # Flat format: fully replace the variants list (config.local.yaml has full control)
                     local_variants = [
                         {"name": v, "model_ref": v} if isinstance(v, str) else v
                         for v in dim_cfg
                     ]
                     data[dim_key]["variants"] = local_variants
                 elif isinstance(dim_cfg, dict):
-                    # 传统格式：dim_cfg 是 {variants: [...], ...}
+                    # Legacy format: dim_cfg is {variants: [...], ...}
                     # Merge non-variant fields (enabled, meta)
                     for k, v in dim_cfg.items():
                         if k == "variants":
@@ -1006,7 +1007,7 @@ def _load_ablation_config() -> dict:
     return data
 
 
-# ── 维度定义（全局常量，控制执行和报告顺序） ──
+# ── Dimension definitions (global constants; control execution and report order) ──
 _DIM_KEYS = [
     "architecture",
     "synthesis",
@@ -1020,7 +1021,7 @@ _DIM_KEYS = [
 ]
 
 
-# ── 各维度运行（从 YAML 读取变体配置） ──────────────────────
+# ── Per-dimension execution (variant configs read from YAML) ─
 
 def _run_variant_single(v, dim_key, queries, tools, verbose):
     """Run a single ablation variant. Returns (name, responses, step_traces, elapsed_s)."""
@@ -1080,7 +1081,7 @@ def _run_variant_single(v, dim_key, queries, tools, verbose):
                 kw = dict(**_llm_kw, synthesis_enabled=True)
                 resp, traces = _run_multi_agent(queries, tools, verbose=verbose, variant_name=name, **kw)
             else:
-                # _run_multi_agent_no_synthesis 签名不含 synthesis_enabled，不传 **kw（含多余的 key 会抛 TypeError）
+                # _run_multi_agent_no_synthesis does not accept synthesis_enabled, so do not pass **kw (extra keys raise TypeError)
                 resp, traces = _run_multi_agent_no_synthesis(queries, tools, verbose, variant_name=name, **_llm_kw)
 
         elif dim_key == "llm_backbone":
@@ -1136,7 +1137,7 @@ def _run_dimension_variants(dim_key: str, variants: list, queries, evaluator_fn,
     meta = meta or {}
     scoring_cfg = scoring_cfg or {}
     enable_selfcheck = scoring_cfg.get("selfcheck", False)
-    # 从合并后的消融配置读取 n_selfcheck_values，覆盖 settings.yaml 默认值
+    # Read n_selfcheck_values from the merged ablation config, overriding the settings.yaml default
     _sc_n_selfcheck = scoring_cfg.get("n_selfcheck_values") or Config.EVAL_N_SELFCHECK_VALUES
 
     print(f"\n{'─' * 60}")
@@ -1151,7 +1152,7 @@ def _run_dimension_variants(dim_key: str, variants: list, queries, evaluator_fn,
     variant_times: Dict[str, float] = {}
     results: Dict[str, dict] = {}
 
-    n_workers = min(len(variants), 3)  # 变体并行数，避免嵌套线程池导致 429 限流
+    n_workers = min(len(variants), 3)  # variant parallelism; avoids 429 rate limits from nested thread pools
 
     def _score_variant(name: str, resp: List[str], traces: List[list], v_queries=None):
         """Score a single variant with optional per-variant queries (language dimension)."""
@@ -1163,7 +1164,7 @@ def _run_dimension_variants(dim_key: str, variants: list, queries, evaluator_fn,
                          step_traces={name: traces} if traces else None)
         return r
 
-    # Specialist 维度：先串行跑 Full（缓存落盘），其余变体再并行复用缓存
+    # Specialist dimension: run Full serially first (cache written to disk), then run the other variants reusing the cache
     if dim_key == "specialist":
         full_variants = [v for v in variants if v.get("exclude") is None]
         other_variants = [v for v in variants if v.get("exclude") is not None]
@@ -1301,18 +1302,18 @@ def _run_dimension_variants(dim_key: str, variants: list, queries, evaluator_fn,
     return results, variant_times
 
 
-# ── 保存结果 ──────────────────────────────────────────────
+# ── Saving results ──────────────────────────────────────────
 
 def _save_report(all_results: Dict[str, dict], log_dir: str, dim_meta: Dict[str, dict] = None,
                  variant_times: Optional[Dict[str, Dict[str, float]]] = None,
                  dim_suffix: str = ""):
     """Save all dimension results to JSON and Markdown.
 
-    复用目录时自动合并已有结果，避免覆盖。
+    Automatically merges existing results when reusing a directory, avoiding overwrites.
     """
     dim_meta = dim_meta or {}
     _suffix = f"_{dim_suffix}" if dim_suffix else ""
-    # JSON — 合并已有结果（复用目录时保留之前维度的数据）
+    # JSON — merge existing results (keep earlier dimension data when reusing a directory)
     json_path = os.path.join(log_dir, f"ablation_report{_suffix}.json")
     merged = dict(all_results)
     if os.path.exists(json_path):
@@ -1320,11 +1321,11 @@ def _save_report(all_results: Dict[str, dict], log_dir: str, dim_meta: Dict[str,
             import json as _json
             with open(json_path, "r", encoding="utf-8") as f:
                 existing = _json.load(f)
-            # 合并已有维度+计时数据
+            # Merge existing dimension + timing data
             for k, v in existing.items():
                 if k not in merged:
                     merged[k] = v
-            # 合并已有的计时数据
+            # Merge existing timing data
             if "_timing" in existing and variant_times:
                 existing_timing = existing["_timing"]
                 for dk, dv in variant_times.items():
@@ -1483,11 +1484,11 @@ def _save_responses_json(log_dir: str, queries: list):
         pass
 
 
-# ── 配置保存（与 --evaluate/--compare 一致）──────────────────
+# ── Config saving (consistent with --evaluate/--compare) ─────
 
 
 def _strip_api_keys(obj):
-    """递归清洗字典中的 api_key / api_key_env 字段。"""
+    """Recursively strip api_key / api_key_env fields from a dict."""
     if isinstance(obj, dict):
         return {k: _strip_api_keys(v) for k, v in obj.items()
                 if k not in ("api_key", "api_key_env")}
@@ -1541,7 +1542,7 @@ def _save_ablation_config(log_dir: str, query_set: str, sample_ratio: Optional[f
         pass
 
 
-# ── 主入口 ──────────────────────────────────────────────────
+# ── Main entry point ────────────────────────────────────────
 
 def run_ablation(
     dim: Optional[str] = None,
@@ -1578,8 +1579,8 @@ def run_ablation(
     dims_config = {k: cfg.get(k, {}) for k in _DIM_KEYS}
     enabled_dims = {k: v for k, v in dims_config.items() if v.get("enabled", True)}
 
-    # 从 config.local.yaml 的 ablation.dimensions 过滤维度（CLI --ablation-dim 优先）
-    if not dim:  # CLI 未指定时才用 config 过滤
+    # Filter dimensions by ablation.dimensions in config.local.yaml (CLI --ablation-dim takes priority)
+    if not dim:  # only use config filtering when the CLI did not specify a dimension
         _cfg_dims = cfg.get("dimensions")
         if _cfg_dims and isinstance(_cfg_dims, list):
             enabled_dims = {k: v for k, v in enabled_dims.items() if k in _cfg_dims}
@@ -1589,7 +1590,7 @@ def run_ablation(
         print("[Ablation] No enabled dimensions found in config/ablation.yaml")
         return
 
-    # Create log dir（统一使用 _create_log_dir 格式，含 config.yaml + config_snapshot）
+    # Create log dir (uses the _create_log_dir format uniformly, including config.yaml + config_snapshot)
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     dim_suffix = f"_{dim}" if dim else ""
     sp = getattr(Config, "SPECIES", None)
@@ -1602,8 +1603,8 @@ def run_ablation(
     _save_ablation_config(log_dir, query_set, sample_ratio, enabled_dims, cfg,
                           ablation_dim=dim, n_selfcheck_values=_n_sc_vals)
 
-    # 初始化磁盘缓存（跨运行持久化）
-    # 优先从最近一次消融日志加载缓存，支持增量跳过
+    # Initialize the disk cache (persisted across runs)
+    # Prefer loading the cache from the most recent ablation log to support incremental skipping
     global _ABLATION_CACHE_FILE
     _ABLATION_CACHE_FILE = os.path.join(log_dir, ".ablation_cache.json")
     if not os.path.exists(_ABLATION_CACHE_FILE):
@@ -1630,7 +1631,7 @@ def run_ablation(
 
     # Per-run ablation cache only (don't wipe project-wide .cache/)
 
-    # Extract scoring config（决定是否运行 SelfCheck 等）
+    # Extract scoring config (determines whether SelfCheck etc. run)
     ablation_scoring_cfg = cfg.get("scoring", {})
     if ablation_scoring_cfg.get("selfcheck", False):
         print(f"  [Config] SelfCheckGPT enabled (may 3-5x scoring time)")
@@ -1640,7 +1641,7 @@ def run_ablation(
     # Initialize scorers
     evaluator_fn, evaluator_bulk_fn, selfcheck_fn = _try_get_scorers()
 
-    # Warm-up: 触发 LLM 和 embedding 加载，避免冷启动拖慢首条查询
+    # Warm-up: trigger LLM and embedding loading so cold starts do not slow down the first query
     _warmup_llm()
 
     # Determine which dimensions to run
@@ -1649,7 +1650,7 @@ def run_ablation(
     all_results: Dict[str, dict] = {}
     all_variant_times: Dict[str, Dict[str, float]] = {}
 
-    # 定义中间保存函数，每完成一个维度就写盘
+    # Define an intermediate save function that writes to disk after each completed dimension
     def _partial_save():
         """Save whatever results we have so far into the merged report."""
         if all_results:
@@ -1658,7 +1659,7 @@ def run_ablation(
             print(f"  [Save] Intermediate results saved ({len(all_results)} dimensions)")
 
     def _is_dimension_cached(variants, queries_list):
-        """检查维度的所有变体是否已在缓存中完成。"""
+        """Check whether all variants of a dimension are already completed in the cache."""
         with _ABLATION_CACHE_LOCK:
             for v in variants:
                 vname = v["name"]
@@ -1678,11 +1679,11 @@ def run_ablation(
                 print(f"[Ablation] Dimension '{dim_key}' has no variants, skipping")
                 continue
 
-            # 增量跳过：所有变体×所有查询都在缓存中 → 从缓存恢复响应 + 重新评分
+            # Incremental skip: every variant × every query is cached → restore responses from cache + re-score
             if _is_dimension_cached(variants, queries):
                 title = dim_meta.get(dim_key, {}).get("title", dim_key)
                 print(f"\n>>> {title} ({dim_key}) — SKIPPED (all cached, re-scoring)")
-                # 从缓存恢复响应
+                # Restore responses from cache
                 cached_responses: Dict[str, List[str]] = {}
                 cached_traces: Dict[str, List[List[dict]]] = {}
                 for v in variants:
@@ -1700,7 +1701,7 @@ def run_ablation(
                             trace_list.append([])
                     cached_responses[vname] = resp_list
                     cached_traces[vname] = trace_list
-                # 重新评分
+                # Re-score
                 dim_results = _run_scoring(
                     queries, cached_responses, evaluator_llm=evaluator_fn,
                     evaluator_llm_bulk=evaluator_bulk_fn,
@@ -1723,14 +1724,14 @@ def run_ablation(
                 )
                 all_results[dim_key] = dim_results
                 all_variant_times[dim_key] = dim_times
-                _partial_save()  # 每完成一个维度就保存中间结果
+                _partial_save()  # save intermediate results after each completed dimension
             except KeyboardInterrupt:
-                raise  # 冒泡到外层 try
+                raise  # propagate to the outer try
             except Exception as e:
                 print(f"  [ERROR] {dim_key} failed: {e}")
                 import traceback
                 traceback.print_exc()
-                _partial_save()  # 出错的维度也保存已有的
+                _partial_save()  # save whatever exists even for the failed dimension
 
     except KeyboardInterrupt:
         print("\n\n  [Interrupt] Ablation interrupted by user. Saving partial results...")

@@ -1,80 +1,81 @@
-# NutriCHAT 模型配置
+# NutriCHAT model configuration
 #
-# providers:   API 供应商连接信息（base_url, api_key_env），角色模型通过 provider 引用
-# nutrichat:   NutriCHAT 自身使用的基座模型（ReAct 推理引擎）
-# evaluator:   EvaluatorLLM 评分模型（保留思考用于评分推理）
-# selfcheck:   SelfCheckGPT 多采样模型（默认继承 nutrichat）
-# baselines:   对比基线模型列表（加新模型见下方 baselines 段说明）
+# providers:   API provider connection info (base_url, api_key_env); role models reference a provider
+# nutrichat:   the backbone model used by NutriCHAT itself (ReAct reasoning engine)
+# evaluator:   EvaluatorLLM scoring model (thinking kept for scoring reasoning)
+# selfcheck:   SelfCheckGPT multi-sampling model (inherits nutrichat by default)
+# baselines:   list of comparison baseline models (see the baselines section below to add models)
 #
-# 思考策略：baselines 默认自动关闭思考（代码按 provider 注入对应参数），
-#           强制思考的模型（DeepSeek-R1 等）由 _THINKING_INHERENT 保护。
-#           优先级：模型条目的显式字段 > _defaults > 代码自动注入
+# Thinking policy: thinking is disabled automatically for baselines by default (code injects
+#           the provider-specific parameter); models that always think (DeepSeek-R1 etc.) are
+#           protected by _THINKING_INHERENT.
+#           Priority: explicit model entry field > _defaults > code auto-injection
 
-# ── 供应商定义（共享连接信息）───────────────────────────
-# 注意：同一模型在不同平台的 API 模型 ID 不同。
-# 切换 provider 时，model 字段必须使用对应平台的 ID 格式。
+# ── Provider definitions (shared connection info) ───────
+# Note: the same model has different API model IDs on different platforms.
+# When switching provider, the model field must use the ID format of that platform.
 providers:
   - provider: siliconflow
     api_key_env: SILICONFLOW_API_KEY
     base_url: https://api.siliconflow.cn/v1
-    # API 兼容：该供应商在 temperature>0 时必须禁用 thinking，否则返回空响应
+    # API compatibility: this provider must disable thinking when temperature>0, otherwise it returns an empty response
     always_disable_thinking: true
-    # model 格式: {org}/{ModelName}，如 deepseek-ai/DeepSeek-V4-Flash
+    # model format: {org}/{ModelName}, e.g. deepseek-ai/DeepSeek-V4-Flash
 
   - provider: aliyun
     api_key_env: ALIYUN_API_KEY
     base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
-    # model 格式: 全小写，如 qwen3.6-plus、glm-4.5-air
+    # model format: all lower-case, e.g. qwen3.6-plus, glm-4.5-air
 
   - provider: deepseek
     api_key_env: DEEPSEEK_API_KEY
     base_url: https://api.deepseek.com
-    # model 格式: deepseek-{version}，如 deepseek-v4-flash
+    # model format: deepseek-{version}, e.g. deepseek-v4-flash
 
   - provider: xiaomi
     api_key_env: XIAOMI_API_KEY
     base_url: https://api.xiaomimimo.com/v1
-    # model 格式: mimo-{version}，如 mimo-v2.5-pro
+    # model format: mimo-{version}, e.g. mimo-v2.5-pro
 
   - provider: qianwen
     api_key_env: QWENAI_API_KEY
     base_url: https://maas.qianwenaiapi.com/compatible-mode/v1
-    # 千问AI平台（OpenAI 兼容）
-    # model 格式: qwen{major}.{minor}-{tier}，如 qwen3.8-flash
+    # Qianwen AI platform (OpenAI-compatible)
+    # model format: qwen{major}.{minor}-{tier}, e.g. qwen3.8-flash
     # Use the model IDs listed under this provider.
 
   - provider: volcano
     api_key_env: HUOSHAN_API_KEY
     base_url: https://ark.cn-beijing.volces.com/api/v3
-    # model 格式: {name}-{version}，如 doubao-seed-2-0-lite-260215
+    # model format: {name}-{version}, e.g. doubao-seed-2-0-lite-260215
 
   - provider: tencent
     api_key_env: HUNYUAN_API_KEY
     base_url: https://tokenhub.tencentmaas.com/v1
-    # model 格式: {short-name}，如 hy-mt2-pro、hy3-preview
+    # model format: {short-name}, e.g. hy-mt2-pro, hy3-preview
 
-# ── NutriCHAT 底座模型（ReAct 推理引擎）────────────────
-# model  = API 模型 ID（name 是显示标签，model 才是传给 API 的 ID，两者不同）
-#          各 provider 的 model 格式不同，见上方 providers 段的注释
+# ── NutriCHAT base model (ReAct reasoning engine) ────────
+# model  = API model ID (name is the display label; model is what is sent to the API — they differ)
+#          the model format differs per provider, see the comments in the providers section above
 nutrichat:
   provider: siliconflow
   model: deepseek-ai/DeepSeek-V4-Flash
   temperature: 0.0
   max_tokens: 200
 
-# ── EvaluatorLLM 评分模型 ──────────────────────────────
-# model  = API 模型 ID，不是显示名（与 baselines 的 name 字段无关）
-# extra_body = null → 保留思考模式（评分需要推理分析）
+# ── EvaluatorLLM scoring model ──────────────────────────
+# model  = API model ID, not the display name (unrelated to the baselines name field)
+# extra_body = null → keep thinking mode (scoring needs reasoning analysis)
 evaluator:
-  # DeepSeek-V4-Pro 作为稳健性 judge；两者都不参与 per-query 生成成本。
+  # DeepSeek-V4-Pro as a robust judge; neither participates in per-query generation cost.
   provider: xiaomi
   model: mimo-v2.5-pro
   temperature: 0.0
   max_tokens: 8192
   extra_body: null
 
-# ── SelfCheckGPT 采样模型 ──────────────────────────────
-# 不指定 provider/model 时默认继承 nutrichat 的模型和连接信息
+# ── SelfCheckGPT sampling model ─────────────────────────
+# When provider/model are not specified, the nutrichat model and connection info are inherited
 selfcheck:
   temperature: 1.0
   max_tokens: 200
@@ -83,18 +84,18 @@ selfcheck:
     thinking:
       type: disabled
 
-# ── 基线对比模型列表 ───────────────────────────────────
+# ── Baseline comparison model list ──────────────────────
 #
-# name:   报告中的显示名，也是 evaluate.yaml 过滤和 thinking_baselines 白名单的匹配键
-# model:  传给 API 的真实模型 ID（格式见各 provider 段注释）
-#         同一个模型在不同 provider 上的 ID 不同，所以 name 和 model 可以不一样
-#         例：name="siliconflow/DeepSeek-V4-Flash" 但 model="deepseek-ai/DeepSeek-V4-Flash"
+# name:   display name in reports, also the matching key for evaluate.yaml filtering and the thinking_baselines whitelist
+# model:  the real model ID sent to the API (format see the provider section comments)
+#         the same model has different IDs on different providers, so name and model may differ
+#         e.g. name="siliconflow/DeepSeek-V4-Flash" but model="deepseek-ai/DeepSeek-V4-Flash"
 #
-# 添加新模型：在对应 provider 组下加一条 name + model 即可
-#   temperature / max_tokens / extra_body（关闭思考）均有默认值，无需手动指定
-#   如果新模型强制开启思考（如 DeepSeek-R1），记得加到 _THINKING_INHERENT
+# Adding a new model: add one name + model entry under the matching provider group
+#   temperature / max_tokens / extra_body (thinking disabled) all have defaults, no need to specify
+#   if the new model forces thinking (e.g. DeepSeek-R1), remember to add it to _THINKING_INHERENT
 #
-# 示例 - 给 siliconflow 加一个新模型：
+# Example - add a new model to siliconflow:
 #   siliconflow:
 #     - name: "siliconflow/Qwen3-Plus"
 #       model: Qwen/Qwen3-Plus
@@ -217,7 +218,7 @@ baselines:
       - name: "tencent/MiniMax-M2.5"
         model: minimax-m2.5
 
-    # ── 千问AI平台（OpenAI 兼容）────────────────────────────
+    # ── Qianwen AI platform (OpenAI-compatible) ─────────────
     # Qwen 3.8 series.
     qianwen:
       - name: "qianwen/Qwen3.8-Flash"
