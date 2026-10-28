@@ -24,8 +24,7 @@ evaluator:
   provider: xiaomi
 
 # ── 评估采样 ─────────────────────────────────────────────────
-# 正式实验: --query-file queries/layer/evaluation_queries_curated.json（54 条精选集）
-# 开发调试: --quick（3% 采样）
+# Use the curated 54-query file, or --quick for a 3% sample.
 evaluation:
   sample_ratio: null          # null=不采样，配合 --query-file 使用全部 54 条
 
@@ -33,12 +32,11 @@ evaluation:
 # 少而精路线：弱/中/强三档 + 基座对照，覆盖 capability 谱系
 baselines:
   - siliconflow/DeepSeek-V4-Flash       # 基座对照（同模型无架构，量化架构价值）
-  - siliconflow/Qwen3-8B                # 弱档（8B 小模型，预期 improvement% 最大）
-  # Aliyun 付费模型 403；Qwen 基线改用千问AI平台（qwen3.8-flash 实测可用）
-  - qianwen/Qwen3.8-Flash               # 弱-中档（替代 Qwen3.5-Flash）
+  - siliconflow/Qwen3-8B                # 弱档（8B 小模型）
+  - qianwen/Qwen3.8-Flash               # 弱-中档
   - siliconflow/GLM-4.5-Air             # 中档（智谱，跨厂商泛化验证）
-  - tencent/MiniMax-M2.5                # 中档（Aliyun 403；Tencent 入口实测可用）
-  - deepseek/DeepSeek-V4-Pro            # 强档（旗舰级，测试架构在强基座上的边际贡献）
+  - tencent/MiniMax-M2.5                # 中档
+  - deepseek/DeepSeek-V4-Pro            # 强档（旗舰级）
 
 # ── 其他参数 ─────────────────────────────────────────────────
 species: layer

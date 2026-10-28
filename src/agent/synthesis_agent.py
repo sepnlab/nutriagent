@@ -56,7 +56,7 @@ class SynthesisAgent:
         Delegates to :func:`src.agent.validation.validate_specialist_outputs`,
         which compares only claims sharing the same entity, attribute and
         basis. The legacy regex checks (generic Ca:P range, cross-attribute
-        mean deviation) were removed after an internal design review: they read
+        mean deviation) were removed because they read
         "crude protein ... 8.8" as P=8.8 and "cage density is 6" as Ca=6.
         """
         return validate_specialist_outputs(results)

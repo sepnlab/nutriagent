@@ -14,21 +14,18 @@ The corpus is not redistributed. Place it under `corpus/` before running tools
 that depend on it. The expected paths are defined in `src/main.py` and
 `src/agent/validation.py`.
 
-## 2. Tests
-
-```bash
-python -m pytest tests/ -q
-```
-
-Tests that require corpus files will be skipped or fail until the corpus is
-available.
-
-## 3. Query sets
+## 2. Query sets
 
 - `queries/layer/evaluation_queries_curated.json` — 54-query evaluation set.
+- `queries/layer/curated_queries.txt` — the same 54 questions as plain text
+  (`query_id<TAB>question`).
 - `queries/layer/evaluation_queries_pool195.json` — 195-query candidate pool.
+- `queries/layer/pool195_queries.txt` — the same 195 questions as plain text.
 
-## 4. Run commands
+The internal regression test suite is not part of this release because it
+depends on the non-redistributed corpus.
+
+## 3. Run commands
 
 Single query:
 
@@ -57,11 +54,12 @@ python main.py --ablation --query-file queries/layer/evaluation_queries_curated.
 Outputs are written under `logs/` in the working directory. `logs/` is not
 tracked by git.
 
-## 5. What is not reproducible from this release alone
+## 4. What is not reproducible from this release alone
 
 The layer-hen corpus is not redistributed because some source terms do not
 clearly permit redistribution. Raw expert workbooks, expert identifiers,
-name/label maps, coding keys, per-query expert scores, internal audit reports,
-and audit logs are not part of the public release. These materials are available
-to the editor and reviewers on reasonable request, subject to confidentiality
-and privacy requirements.
+name/label maps, coding keys, full answer keys, per-query expert scores,
+internal audit reports, and audit logs are not part of the public release.
+De-identified scores and audit records are available to the editor and reviewers
+on reasonable request, subject to confidentiality and privacy requirements. See
+`DATA_ACCESS.md` for the complete access map.

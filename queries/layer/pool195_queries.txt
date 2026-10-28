@@ -1,0 +1,195 @@
+LPM-001	What is the peak hen-day egg production percentage for Hy-Line W-36?
+LPM-002	What is the average egg weight for Hy-Line Brown at 40 weeks?
+LPM-003	What is the daily feed intake of ISA Brown at peak production?
+LPM-004	What is the body weight of Lohmann Pink at 18 weeks?
+LPM-005	What is the egg mass per hen per day for Hy-Line W-36 at 30 weeks?
+LPM-006	Compare the peak egg production between Hy-Line W-36 and ISA Brown.
+LPM-007	Compare egg weight between Hy-Line Brown and Lohmann Pink at 50 weeks.
+LPM-008	How does feed intake change as a hen ages from peak lay to late lay?
+LPM-009	Describe the typical egg production curve of a commercial layer.
+LPM-010	What factors influence feed intake in laying hens?
+LPM-011	What is the feed per dozen eggs for Hy-Line Brown at 30 weeks?
+LPM-012	What is the feed per kg egg mass for Lohmann Pink at 60 weeks?
+LPM-013	Compare body weight between Hy-Line W-36 and Hy-Line Brown at 40 weeks.
+LPM-014	How does egg mass change over the laying cycle?
+LPM-015	What is the relationship between feed intake and egg production?
+LPM-016	Compare the mortality rates of ISA Brown and Hy-Line W-36.
+LPM-017	What is the egg shell breaking strength for Hy-Line W-36 at 40 weeks?
+LPM-018	What is the Haugh unit value for Hy-Line Brown at 30 weeks?
+LPM-019	Explain the economic importance of feed conversion efficiency in egg production.
+LPM-020	Compare the production characteristics of ISA Brown vs Lohmann Pink.
+LPM-021	What is the shell breaking strength for ISA Brown at 60 weeks?
+LPM-022	What is the Haugh unit for Lohmann Pink at 70 weeks?
+LPM-023	How does egg shell quality change as hens age?
+LPM-024	Compare Haugh unit values between white and brown egg layers.
+LPM-025	What factors affect egg shell breaking strength?
+LPM-026	Describe the relationship between hen age and internal egg quality.
+LPM-027	What is the shell strength of Hy-Line W-36 at 80 weeks?
+LPM-028	Compare shell breaking strength at 30 weeks vs 70 weeks for Hy-Line Brown.
+LPM-029	What nutritional factors influence egg shell quality?
+LPM-030	How does egg weight affect eggshell quality parameters?
+LPM-031	What is the albumen height indicator for ISA Brown at peak production?
+LPM-032	Explain the economic impact of egg quality in commercial layer operations.
+LPM-033	Compare egg quality parameters between Hy-Line W-36 and Lohmann Pink.
+LPM-034	How does nutrition affect Haugh unit values?
+LPM-035	What is the relationship between calcium metabolism and shell quality?
+LPM-036	Describe the effects of heat stress on egg shell quality.
+LPM-037	Compare the Haugh unit of a 35-week-old vs 75-week-old ISA Brown hen.
+LPM-038	What management practices improve egg shell quality in late lay?
+LPM-039	How does egg size influence shell thickness?
+LPM-040	What is the role of vitamin D3 in eggshell formation?
+LNR-001	What is the calcium requirement for Hy-Line W-36 in Lay I phase?
+LNR-002	What is the crude protein requirement for ISA Brown in the Starter phase?
+LNR-003	What is the available phosphorus requirement for Lohmann Pink in Lay II?
+LNR-004	What is the methionine requirement for Hy-Line Brown in Lay I?
+LNR-005	What is the SID lysine requirement for Hy-Line W-36 in Starter phase?
+LNR-006	Compare calcium requirements from Pre-Lay to Lay III in layer diets.
+LNR-007	How do amino acid requirements change from starter to lay phases?
+LNR-008	What is the choline requirement for Hy-Line Brown in Lay I?
+LNR-009	Compare the calcium and phosphorus ratio across different lay phases.
+LNR-010	Explain why calcium requirement increases dramatically at the onset of lay.
+LNR-011	What is the linoleic acid requirement for Hy-Line W-36 in Lay I?
+LNR-012	What is the sodium requirement for ISA Brown during Pre-Lay?
+LNR-013	Compare methionine+cysteine requirements across starter, grower, and lay phases.
+LNR-014	Describe the importance of amino acid balancing in layer diets.
+LNR-015	What is the Vitamin D3 requirement for Hy-Line W-36 in Lay II?
+LNR-016	How do calcium and phosphorus requirements differ between broiler and layer diets?
+LNR-017	What is the zinc requirement for Lohmann Pink in the Starter phase?
+LNR-018	Explain the importance of vitamin and mineral specifications in layer diets.
+LNR-019	Compare the tryptophan requirement between Hy-Line W-36 and Hy-Line Brown.
+LNR-020	How do nutrient requirements differ between pullet rearing and laying phases?
+LDEF-001	What is the definition of Hen-Day Egg Production?
+LDEF-002	Define Haugh Unit.
+LDEF-003	What is the Pre-Lay phase in layer nutrition?
+LDEF-004	Define Egg Mass (g/hen/day).
+LDEF-005	What is egg shell breaking strength?
+LDEF-006	Define the Lighting Program in layer management.
+LDEF-007	What is a Pullet?
+LDEF-008	Define Feed per Dozen Eggs.
+LDEF-009	What is the meaning of Peak Production in layers?
+LDEF-010	Define Forced Molting.
+LDEF-011	What is Egg Shell Quality?
+LDEF-012	Define albumen height.
+LDEF-013	What is a caged layer vs cage-free production?
+LDEF-014	Define the Fatty Liver Hemorrhagic Syndrome in layers.
+LDEF-015	What is Egg Yolk Pigmentation?
+LDEF-016	Define Egg Drop Syndrome.
+LDEF-017	What is the Developer phase in pullet rearing?
+LDEF-018	Define Hen-Housed Egg Production.
+LDEF-019	What is the Roche Yolk Color Fan?
+LDEF-020	Define Sexually Mature in context of pullets.
+LFIB-001	What is the calcium content of Limestone?
+LFIB-002	What is the crude protein content of Soybean Meal 48%?
+LFIB-003	What is the metabolizable energy of Corn Grain?
+LFIB-004	What is the available phosphorus content of Dicalcium Phosphate?
+LFIB-005	What is the lysine content of Soybean Meal 48%?
+LFIB-006	Compare calcium sources for layer diets: limestone vs dicalcium phosphate.
+LFIB-007	Which feed ingredients provide the most available calcium for eggshell formation?
+LFIB-008	Compare the energy content of Corn Grain vs Wheat Grain.
+LFIB-009	What are the main protein sources available for layer diet formulation?
+LFIB-010	Describe the role of oyster shell in layer nutrition.
+LFIB-011	What is the sodium content of Salt?
+LFIB-012	What is the methionine content of DL-Methionine supplement?
+LFIB-013	Compare the amino acid profiles of Soybean Meal and Canola Meal.
+LFIB-014	Which feed ingredients are good sources of linoleic acid for laying hens?
+LFIB-015	Explain the importance of calcium particle size in layer feeds.
+LFIB-016	What is the calcium digestibility of Meat and Bone Meal?
+LFIB-017	Compare the phosphorus digestibility between plant and animal sources.
+LFIB-018	What feed additives support egg shell quality in late lay?
+LFIB-019	Compare the crude fiber content of ingredient sources used in layer feeds.
+LFIB-020	Describe the role of synthetic amino acids in low-protein layer diets.
+LFIB-021	What is the protein digestibility of Soybean Meal 48%?
+LFIB-022	What is the SID lysine value for Corn Grain?
+LFIB-023	What is the calcium digestibility of Limestone?
+LFIB-024	Compare protein digestibility between animal and plant protein meals.
+LFIB-025	How does crude fiber affect energy digestibility in layers?
+LFIB-026	What is the phosphorus digestibility of Dicalcium Phosphate?
+LFIB-027	Compare the SID lysine of Corn Grain and Sorghum Grain.
+LFIB-028	What is the role of phytase in improving phosphorus digestibility?
+LFIB-029	Describe the importance of standardized ileal digestibility in feed formulation.
+LFIB-030	What factors affect calcium digestibility in laying hens?
+LFIB-031	What is the fat digestibility of Soybean Oil?
+LFIB-032	Compare SID methionine values across different protein meals.
+LFIB-033	How does feed particle size affect nutrient digestibility in layers?
+LFIB-034	What is the amino acid digestibility of Fish Meal 65%?
+LFIB-035	Compare the dry matter digestibility of Corn Grain vs Barley Grain.
+LFIB-036	How do non-starch polysaccharides affect nutrient digestibility?
+LFIB-037	What is the protein digestibility of Cottonseed Meal and what limits its use in layer diets?
+LFIB-038	Describe the interaction between calcium and phosphorus digestibility in layers.
+LFIB-039	How does the form of calcium supplement affect its digestibility?
+LFIB-040	What exogenous enzymes improve nutrient digestibility in layer feeds?
+L-ADV-PM-001	What is the egg mass per day for Hy-Line W-36 at 30 weeks, given its hen-day production rate and egg weight?
+L-ADV-PM-002	For Lohmann Pink at 72 weeks, how does the mortality rate compare between Hy-Line W-36 and Jinghong 1 v3.0?
+L-ADV-PM-003	Calculate the daily egg mass for Jingbai 939 at 40 weeks based on its production rate and egg weight.
+L-ADV-PM-004	What is the body weight of Nongda 6 at 40 weeks, and how does it compare to Nongda 3?
+L-ADV-PM-005	Which has higher peak production: Jingfen 6 or Hy-Line Pink? What are their respective peak values?
+L-ADV-PM-006	What is the feed conversion ratio for Dawu Jinfeng at 72 weeks in kg feed per kg eggs?
+L-ADV-PM-007	Compare body weight trajectories: which breed reaches 1800g earliest, Beinong 1, Beinong 2, or Dawu Jinfeng?
+L-ADV-PM-008	What is the cumulative egg count for Jinghong 1 v3.0 at 60 weeks and how does it compare to Jingbai 939?
+L-ADV-NR-001	What calcium level does Hy-Line Brown need during peak lay, and how does it change from pre-lay to peak?
+L-ADV-NR-002	Compare the SID lysine requirements between Hy-Line W-36 and Jinghong 1 v3.0 during the peak laying phase.
+L-ADV-NR-003	If Jingbai 939 consumes 105g of feed daily during Layer I, what is its daily methionine intake in mg?
+L-ADV-NR-004	How does the calcium requirement change across the three laying phases for Dawu Jinfeng?
+L-ADV-NR-005	Compare crude protein requirements across all phases for Nongda 6 vs Nongda 3.
+L-ADV-NR-006	What is the SID methionine+cysteine requirement for Lohmann Pink in Layer I phase?
+L-ADV-NR-007	Does Jinghong 1 v3.0 have higher or lower calcium requirements than Hy-Line Brown in the peak phase?
+L-ADV-NR-008	What is the choline requirement for Hy-Line Pink during the starter phase, in mg per kg of feed?
+L-ADV-CB-001	Compare the body weight at 40 weeks across Hy-Line W-36, Jingbai 939, and Nongda 6. Which is heaviest and which is lightest?
+L-ADV-CB-002	Which Chinese breed has the highest peak egg production rate: Jinghong 1 v3.0, Jingfen 6, or Jingbai 939?
+L-ADV-CB-003	Compare the calcium requirements during peak lay between international breeds (Hy-Line W-36, ISA Brown) and Chinese breeds (Jinghong 1, Dawu Jinfeng).
+L-ADV-CB-004	Which breed reaches sexual maturity earliest based on weeks to 50% production: Hy-Line Pink, Lohmann Pink, or Lohmann Grey?
+L-ADV-CB-005	Compare egg weight at 40 weeks between ISA Brown, Hy-Line Pink, and Beinong 1.
+L-ADV-CE-001	If a farmer wants a breed with <100g daily feed intake and >90% peak production, which breeds satisfy both constraints?
+L-ADV-CE-002	Which Chinese layer breeds have a published SID amino acid profile? List their SID lysine requirements.
+L-ADV-CE-003	What would happen to eggshell quality if calcium is reduced from 4.0% to 3.5% for Jinghong 1 v3.0 during Layer II?
+L-ADV-CE-004	If Hy-Line Brown's daily feed intake drops from 112g to 100g during peak production, how would calcium intake change?
+L-ADV-CE-005	Rank these breeds by body weight at 40 weeks: Hy-Line W-36, ISA Brown, Lohmann Pink, Nongda 6.
+L-ADV-VM-001	What is the Vitamin A requirement for Jinghong 1 v3.0 during the layer phase?
+L-ADV-VM-002	Compare zinc requirements between Hy-Line Pink and Lohmann Pink.
+L-ADV-VM-003	What selenium level is recommended for Jingbai 939 in the layer phase?
+L-ADV-VM-004	Does Nongda 6 have published vitamin recommendations? If so, what is its Vitamin D3 level?
+CN-LP-001	京粉6号的产蛋高峰期母鸡日产蛋率是多少？
+CN-LP-002	京红1号40周龄的蛋重是多少？
+CN-LP-003	大午金凤18周龄的体重是多少？
+CN-LP-004	农大3号40周龄的体重是多少？
+CN-LP-005	比较京粉6号和海兰W-36的产蛋高峰和持续性。
+CN-LP-006	比较大午金凤和农大3号40周龄的体重。
+CN-LP-007	描述中国国产蛋鸡品种的特点。
+CN-LP-008	京粉6号30周龄的日均采食量是多少？
+CN-LP-009	大午金凤60周龄的蛋壳强度是多少？
+CN-LP-010	比较大午金凤和农大3号40周龄的蛋重。
+CN-LN-001	京粉6号产蛋I期的钙需要量是多少？
+CN-LN-002	大午金凤产蛋I期的粗蛋白需要量是多少？
+CN-LN-003	京红1号产蛋II期的有效磷需要量是多少？
+CN-LN-004	农大3号产蛋I期的代谢能需要量是多少？
+CN-LN-005	比较大午金凤从预产期到产蛋III期的钙需要量。
+CN-LN-006	比较京粉6号和海兰W-36的氨基酸需要量。
+CN-LN-007	京粉6号产蛋I期的维生素D3需要量是多少？
+CN-LN-008	描述中国国产蛋鸡品种的阶段饲喂策略。
+CN-LN-009	中国蛋鸡品种与西方商业蛋鸡品种的营养需要量有何不同？
+CN-LN-010	农大3号产蛋I期的标准回肠可消化赖氨酸需要量是多少？
+CN-CL-001	比较京粉6号和海兰W-36的产蛋曲线。
+CN-CL-002	比较大午金凤和伊莎褐的体重。
+CN-CL-003	中国国产蛋鸡品种与西方品种在生产性能上有何不同？
+CN-CL-004	比较中国国产蛋鸡和海兰W-36标准的钙需要量。
+CN-CL-005	国产蛋鸡品种在中国禽蛋产业中的作用是什么？
+CN-DEF-001	什么是黄羽肉鸡？
+CN-DEF-002	什么是817肉杂鸡？
+CN-DEF-003	中国国产肉鸡品种的现状如何？
+CN-ADV-001	京红1号3.0在产蛋I期的钙需要量是多少？与产蛋IV期相比如何变化？
+CN-ADV-002	京白939在30周龄的日产蛋量是多少克？需要用到产蛋率和蛋重两个数据。
+CN-ADV-003	京粉6号在产蛋高峰期的可消化赖氨酸需要量是多少？
+CN-ADV-004	农大6号从育雏期到产蛋期的钙需要量如何变化？
+CN-ADV-005	比较京红1号3.0和京白939在40周龄的体重。
+CN-ADV-006	北农2号的育雏期代谢能需要量是多少？
+CN-ADV-NR-001	京红1号3.0和大午金凤在产蛋高峰期的钙需要量有何不同？
+CN-ADV-NR-002	京白939的粗蛋白需要量在育雏期和产蛋期分别是多少？
+CN-ADV-NR-003	北农1号有哪些营养阶段数据可用？列出其粗蛋白需要量。
+CN-ADV-NR-004	京粉6号的维生素A和维生素D3添加量在育雏期是多少？
+CN-ADV-NR-005	大午金凤在Layer I和Layer III期的钙需要量差异有多大？
+CN-ADV-NR-006	农大6号的胆碱推荐量在育雏期和产蛋期各是多少？
+CN-ADV-CB-001	在中国品种中，哪个品种的产蛋高峰期最高？京红1号、京粉6号还是大午金凤？
+CN-ADV-CB-002	比较北农1号和北农2号的产蛋性能差异。
+CN-ADV-CB-003	农大3号和农大6号在40周龄的蛋重和体重有何差异？
+CN-ADV-CB-004	如果农户希望选择耗料量低(<100g/天)且产蛋率高的中国品种，有哪些选择？
+CN-ADV-CB-005	京红1号3.0在60周龄的累计产蛋数是多少？与京粉6号相比如何？

@@ -41,8 +41,7 @@ providers:
     base_url: https://maas.qianwenaiapi.com/compatible-mode/v1
     # 千问AI平台（OpenAI 兼容）
     # model 格式: qwen{major}.{minor}-{tier}，如 qwen3.8-flash
-    # 注意：该账户对 qwen3.5-flash / qwen3.6-plus / qwen3.7-plus 返回 403，
-    #       qwen3.8-flash / qwen3.8-27b / qwen3.8-max 可用（2026-10-20 实测）。
+    # Use the model IDs listed under this provider.
 
   - provider: volcano
     api_key_env: HUOSHAN_API_KEY
@@ -219,7 +218,7 @@ baselines:
         model: minimax-m2.5
 
     # ── 千问AI平台（OpenAI 兼容）────────────────────────────
-    # 该账户当前可用的 Qwen 3.8 系列。
+    # Qwen 3.8 series.
     qianwen:
       - name: "qianwen/Qwen3.8-Flash"
         model: qwen3.8-flash

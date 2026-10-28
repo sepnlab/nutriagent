@@ -6,15 +6,17 @@ Terminology) use isolated tools and a shared retrieval layer; a synthesis stage
 checks cross-specialist consistency and integrates their outputs.
 
 This release contains the source code, configuration, prompts embedded in the
-source, and the 54-query evaluation set with the 195-query candidate pool. It is
-limited to reusable code and query data.
+source, and the 54-query evaluation set with the 195-query candidate pool. The
+query sets are provided as JSON manifests and as plain-text question lists. It
+is limited to reusable code and query data.
 
 ## Contents
 
 - `src/` — agents, tools, retrieval, evaluation, and runtime code.
 - `config/` — model, experiment, and pricing configuration; no API keys.
-- `queries/layer/` — the 54-query curated set and the 195-query candidate pool.
-- `tests/` — unit and regression tests.
+- `queries/layer/` — the 54-query curated set and the 195-query candidate pool,
+  in JSON and plain-text form.
+- `DATA_ACCESS.md` — public, controlled-access, and non-redistributed items.
 - `REPRODUCTION.md` — install and run commands.
 
 ## Not included
@@ -23,12 +25,13 @@ This public release does **not** contain:
 
 - the layer-hen corpus, because some source terms do not clearly permit redistribution;
 - raw expert workbooks, expert identifiers, name/label maps, or coding keys;
-- expert score tables, internal audit reports, audit logs, or generated annotations;
-- response/cover letters or manuscript files.
+- expert score tables, full answer keys, internal audit reports, audit logs, or generated annotations;
+- response/cover letters or manuscript files;
+- the internal regression test suite, which depends on the non-redistributed corpus.
 
 The corpus can be placed under `corpus/` using the sources documented in the
-manuscript's Table S3. The code and tests that require corpus files will not run
-until the corpus is present.
+manuscript's Table S3. The code that requires corpus files will not run until
+the corpus is present.
 
 ## Quick start
 
@@ -37,7 +40,6 @@ python -m venv .venv
 .venv\Scripts\activate        # Windows
 pip install -r requirements.txt
 copy .env.example .env        # add your own API keys
-python -m pytest tests/ -q
 python main.py --check-config
 ```
 
@@ -53,7 +55,8 @@ data remain subject to their original terms.
 
 De-identified per-query expert scores and audit materials are not part of this
 public release. They are available to the editor and reviewers on reasonable
-request, subject to confidentiality and privacy requirements.
+request, subject to confidentiality and privacy requirements. See
+`DATA_ACCESS.md` for the complete access map.
 
 ## Citation
 
