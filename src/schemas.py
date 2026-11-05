@@ -168,6 +168,8 @@ class BaselineSettings(BaseModel):
 class SettingsFile(BaseModel):
     species: str = "broiler"
     max_tokens: int = 200
+    specialist_max_tokens: int = 200
+    selfcheck_max_tokens: int = 200
     retrieval: RetrievalSettings = RetrievalSettings()
     api: ApiSettings = ApiSettings()
     agent: AgentSettings = AgentSettings()

@@ -8,10 +8,10 @@
 species: layer
 
 # ---- Response generation ----
-# Maximum number of tokens (the original single-agent NutriCHAT used 200; Multi-Agent Synthesis needs more room)
-max_tokens: 512
-# Token cap for specialist intermediate output (tool data retrieval only, no long answers needed)
-specialist_max_tokens: 256
+# Maximum number of output tokens per generation call (reported runs: 200; Table 1 and Supplementary S13)
+max_tokens: 200
+# Token cap for specialist intermediate output (reported runs: 200 per call)
+specialist_max_tokens: 200
 # Token cap for SelfCheckGPT sampling (NLI only checks whether facts exist, no full answer needed)
 selfcheck_max_tokens: 200
 

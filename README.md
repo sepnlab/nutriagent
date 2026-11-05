@@ -29,9 +29,9 @@ This public release does **not** contain:
 - response/cover letters or manuscript files;
 - the internal regression test suite, which depends on the non-redistributed corpus.
 
-The corpus can be placed under `corpus/` using the sources documented in the
-manuscript's Table S3. The code that requires corpus files will not run until
-the corpus is present.
+The corpus can be placed under `corpus/` using the sources documented in
+Supplementary Table S2 (per-breed mapping in Table S2b). The code that requires
+corpus files will not run until the corpus is present.
 
 ## Quick start
 
@@ -50,8 +50,8 @@ See `REPRODUCTION.md` for query and evaluation commands.
 Code is released under the MIT License (see `LICENSE`). The 54-query and
 195-query sets are provided for research use. The layer-hen corpus is derived
 from public feed tables and breeder/company documentation; per-breed provenance
-and source terms are documented in the manuscript and its Table S3. Third-party
-data remain subject to their original terms.
+and source terms are documented in Supplementary Table S2 and Table S2b.
+Third-party data remain subject to their original terms.
 
 De-identified per-query expert scores and audit materials are not part of this
 public release. They are available to the editor and reviewers on reasonable

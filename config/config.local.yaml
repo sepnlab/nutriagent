@@ -42,7 +42,7 @@ baselines:
 species: layer
 agent_mode: multi
 breakdown: true
-max_tokens: 512
+max_tokens: 200
 api:
   timeout: 30
   max_concurrent: 4  # DeepSeek official TPM limits are relatively generous

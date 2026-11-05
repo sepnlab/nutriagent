@@ -1,9 +1,8 @@
 # Data and code access
 
 This repository is the public code and query release for the NutriAgent
-manuscript (v1.0.2). It is not a full data release. This file maps the
-reproducibility items requested in the R4.10 review comment to their access
-status.
+manuscript (v1.0.3). It is not a full data release. This file maps the
+reproducibility items described in the manuscript to their access status.
 
 ## Public in this repository
 
@@ -32,7 +31,10 @@ Model access and price date: **2026-10-20**. The reported model IDs are:
 | Local embedding | local | `Qwen3-Embedding-0.6B` |
 | Local NLI evaluator | local | `MoritzLaurer/mDeBERTa-v3-base-mnli-xnli` |
 
-Per-model list prices are in Supplementary Table S9a. Numeric expected values
+Reported generation settings are temperature 0.0, thinking disabled, and a
+200-token output limit; evaluator calls use 8192 tokens. The local NLI
+checkpoint is pinned to base revision `8adb042d524ecd5c26d3e3ba0e3fbcf7e2d0864c`.
+Per-model list prices are in Supplementary Table S6a. Numeric expected values
 are included in the query JSON where available: 36 of 54 curated queries and
 3 of 195 candidate-pool queries. The plain-text files contain the question text
 and query ID only.
@@ -45,14 +47,17 @@ request, subject to confidentiality, privacy, and source-licensing conditions:
 - full answer keys and expected-behavior annotations;
 - de-identified per-query expert scores;
 - audit codebooks and de-identified audit records;
-- row-level provenance records underlying Supplementary Table S3, where the
+- the frozen model lock and run manifest, including model-file SHA256 hashes;
+  public model IDs and generation settings are in `config/models.yaml` and
+  `config/settings.yaml`;
+- row-level provenance records underlying Supplementary Table S2, where the
   original source terms permit sharing.
 
 ## Not redistributed
 
 - The layer-hen corpus, because some source terms do not clearly permit
   redistribution. Dataset-level provenance and unresolved fields are reported
-  in Supplementary Table S3.
+  in Supplementary Table S2 (per-breed mapping in Table S2b).
 - Raw expert workbooks and expert identifiers, which contain identifying
   information.
 - Name/label maps, coding keys, API keys, logs, internal audit reports, and
